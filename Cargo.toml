@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/stub-crate"
+]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/MyNameReallySux/neonos"
+homepage = "https://github.com/MyNameReallySux/neonos"
+documentation = "https://github.com/MyNameReallySux/neonos"
+readme = "README.md"
+
+[workspace.dependencies]
