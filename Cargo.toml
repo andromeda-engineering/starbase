@@ -1,7 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/stub-crate"
+  "crates/stub-crate",
+  "crates/neon"
 ]
 
 [workspace.package]
