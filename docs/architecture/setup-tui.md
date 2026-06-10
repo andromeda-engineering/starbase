@@ -6,7 +6,7 @@
 
 ## Shape
 
-```
+```sh
 neon setup            # launch the TUI: pick + customize each step, then run the pipeline
 neon setup <step>     # run one step headless (idempotent, scriptable)
 neon setup run        # run the full configured pipeline non-interactively (CI / re-provision)

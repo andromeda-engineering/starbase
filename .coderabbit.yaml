@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 language: "en-US"
 
 reviews:
@@ -7,14 +8,15 @@ reviews:
   poem: false
   review_status: true
   collapse_walkthrough: false
-
-path_filters:
-  - "!target/**"
-  - "!node_modules/**"
-  - "!dist/**"
-  - "!coverage/**"
-
-instructions:
-  - "Focus on correctness, safety, maintainability, and clear developer experience."
-  - "Pay special attention to destructive file operations."
-  - "NeonOS should be local-first and should not send repo contents externally by default."
+  path_filters:
+    - "!target/**"
+    - "!node_modules/**"
+    - "!dist/**"
+    - "!coverage/**"
+  path_instructions:
+    - path: "**"
+      instructions: >-
+        Focus on correctness, safety, maintainability, and clear developer
+        experience. Pay special attention to destructive file operations.
+        NeonOS should be local-first and should not send repo contents
+        externally by default.

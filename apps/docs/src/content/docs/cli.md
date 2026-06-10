@@ -6,7 +6,7 @@ description: Command reference for the neon command-line interface.
 The `neon` CLI is the primary interface for interacting with NeonOS from your terminal.
 
 :::note
-The CLI is under active development. Commands documented here reflect the planned Phase 1 interface.
+The CLI is under active development. Commands documented here reflect the current Phase 1 interface.
 :::
 
 ## Global Flags
@@ -15,7 +15,6 @@ The CLI is under active development. Commands documented here reflect the planne
 |------|-------|-------------|
 | `--help` | `-h` | Print help for any command |
 | `--version` | `-V` | Print the current `neon` version |
-| `--verbose` | `-v` | Enable verbose/debug output |
 
 ---
 
@@ -29,14 +28,14 @@ neon
 
 **Output example:**
 
-```
-neon — AI-native developer environment
+```text
+NeonOS CLI – developer environment diagnostics and tooling
 
 Usage: neon <COMMAND>
 
 Commands:
-  doctor    Check your environment for required tools and configuration
-  help      Print help
+  doctor  Gather and display environment diagnostics
+  help    Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
@@ -47,33 +46,49 @@ Options:
 
 ## `neon doctor`
 
-Inspects your local environment and reports the status of required tools, runtime versions, and configuration.
+A **read-only** health dashboard. It probes your local environment and reports detected
+tool versions, your Git identity, and repository health. It never mutates anything.
 
 ```sh
 neon doctor
 ```
 
-**What it checks:**
+**What it reports:**
 
-- Node.js version (requires 22.12.0+)
-- pnpm version
-- Rust toolchain (reads `rust-toolchain.toml`)
-- Cargo availability
-- Git configuration
-- Required environment variables
+- **Tooling** — detected versions of `git`, `rustc`, `cargo`, `node`, `pnpm`, and `docker`
+  (a missing tool is shown as `not found`).
+- **Git Identity** — the effective `user.name` / `user.email`.
+- **Repo Health** — current branch, short `HEAD`, and the count of dirty (uncommitted) files.
 
-**Output example:**
+When run in an interactive terminal, `doctor` opens a multi-pane TUI (quit with `q` or `Esc`).
+When stdout is **not** a TTY (piped or in CI), it prints the same information as plain text —
+useful for logging and scripts:
 
-```
-neon doctor
-
-  Node.js   22.14.0   OK
-  pnpm      9.15.0    OK
-  Rust      1.85.0    OK
-  cargo     1.85.0    OK
-  git        2.47.0   OK
-
-All checks passed.
+```sh
+neon doctor | cat        # bash / zsh
+neon doctor | Out-String # PowerShell
 ```
 
-If any check fails, `neon doctor` exits with a non-zero status code and prints a remediation hint.
+**Plain-text output example:**
+
+```text
+=== Tooling ===
+     git: git version 2.47.0
+   rustc: rustc 1.96.0
+   cargo: cargo 1.96.0
+    node: v22.14.0
+    pnpm: 9.15.0
+  docker: Docker version 27.4.0
+
+=== Git Identity ===
+  name:  Ada Lovelace
+  email: ada@example.com
+
+=== Repo Health ===
+  branch:    main
+  HEAD:      a1b2c3d
+  dirty:     0 file(s)
+```
+
+`neon doctor` is diagnostic and read-only: it always exits `0`, reporting missing tools as
+`not found` rather than failing. (It exits non-zero only on a genuine terminal I/O error.)
