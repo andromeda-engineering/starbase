@@ -52,6 +52,17 @@ fn first_line(s: &str) -> String {
     s.lines().next().unwrap_or(s).to_string()
 }
 
+/// Map a `run()` result to "(not set)" when the value is missing, empty, or errored.
+/// `git config user.name`/`user.email` exit non-zero when unset, which `run()` turns
+/// into "not found"/"error: ...", so treat those as unset rather than displaying them.
+fn or_not_set(value: String) -> String {
+    if value.is_empty() || value == "not found" || value.starts_with("error") {
+        "(not set)".to_string()
+    } else {
+        value
+    }
+}
+
 fn collect() -> DiagData {
     // Tool versions – ask each tool for its version string.
     let tools = vec![
@@ -81,20 +92,10 @@ fn collect() -> DiagData {
         },
     ];
 
-    // Git identity
-    let user_name = run("git", &["config", "user.name"]);
-    let user_email = run("git", &["config", "user.email"]);
+    // Git identity (unset config exits non-zero -> treat as "(not set)")
     let identity = GitIdentity {
-        user_name: if user_name.is_empty() {
-            "(not set)".to_string()
-        } else {
-            user_name
-        },
-        user_email: if user_email.is_empty() {
-            "(not set)".to_string()
-        } else {
-            user_email
-        },
+        user_name: or_not_set(run("git", &["config", "user.name"])),
+        user_email: or_not_set(run("git", &["config", "user.email"])),
     };
 
     // Repo health

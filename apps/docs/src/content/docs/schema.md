@@ -31,4 +31,4 @@ Caches repository state, toolchain info, and computed scaffolding results.
 
 ## Migration Strategy
 
-Schema migrations will be managed with SeaORM's migration crate, giving each schema change a versioned, reversible migration file stored in `crates/migration/`.
+Schema migrations will be managed with SeaORM's migration crate, giving each schema change a versioned, reversible migration file. These will live in a planned `crates/migration/` crate (not yet present — the workspace currently contains `crates/neon` and `crates/stub-crate`).

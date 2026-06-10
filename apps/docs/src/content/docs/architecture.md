@@ -33,9 +33,10 @@ Cargo manages the Rust crates, CLI binaries, and core logic:
 
 ## Future Phases
 
-Later phases will introduce:
+Phase 1 introduces the `neon` CLI binary (Rust, `crates/neon`) with its first
+subcommand, `doctor`. Later phases build on it:
 
-- The `neon` CLI binary (Rust, in `crates/`)
+- Additional `neon` subcommands beyond `doctor` (e.g. `repo`, `setup`)
 - SQLite persistence layer with SeaORM
 - Agent configuration and local memory subsystem
 - Repeatable workflow engine
