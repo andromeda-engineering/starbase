@@ -1,0 +1,37 @@
+name: Branch Name
+
+on:
+  pull_request:
+
+jobs:
+  branch-name:
+    name: Branch Name
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate head branch name
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          # Automated branches (Dependabot, changesets release) are exempt — their
+          # names are bot-generated and not under our naming convention.
+          case "$BRANCH" in
+            dependabot/*|changeset-release/*)
+              echo "Skipping naming check for automated branch: $BRANCH"
+              exit 0
+              ;;
+          esac
+
+          # Mirrors the branch-pattern convention:
+          #   [agent-|claude-|revert-]<type>/<TICKET/>name-of-branch
+          pattern='^(agent-|claude-|revert-)?(feat|fix|chore|docs|refactor|test|ci|build|perf|style|revert)/([A-Z]+-?[0-9]+(\+[A-Z]+-?[0-9]+)*/)?[a-z0-9][a-z0-9-]*[a-z0-9]$'
+
+          if echo "$BRANCH" | grep -Pq "$pattern"; then
+            echo "Branch name '$BRANCH' matches the convention."
+          else
+            echo "::error::Branch name '$BRANCH' does not match the required naming convention."
+            echo "Expected: [agent-|claude-|revert-]<type>/<TICKET/>name-of-branch"
+            echo "  type = feat | fix | chore | docs | refactor | test | ci | build | perf | style | revert"
+            echo "  examples: feat/add-thing, agent-fix/ABC-1/handle-null, docs/update-readme"
+            exit 1
+          fi
