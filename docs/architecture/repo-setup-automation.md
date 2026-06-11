@@ -82,7 +82,28 @@ PR). Resolution chosen: **require 1 approval but allow admin bypass** (`enforce_
 **Principle:** repo topology (solo vs team) is an input, not an assumption. Default to admin
 bypass until a second maintainer exists.
 
-### 3.5 Defaults that surprise
+### 3.5 `branch_name_pattern` is org-only — user repos can't enforce naming server-side
+Enforcing the branch-naming convention (the `branch-pattern` regex) as a ruleset rule
+(`branch_name_pattern`, one of GitHub's **metadata restriction** rules) fails on a
+**personally-owned** repo. The API returns `422 Validation Failed — Invalid rule
+'branch_name_pattern'` for *any* pattern (even a trivial `starts_with`), because metadata
+restriction rules are an **organization-only** feature. At bootstrap time the repo was
+personally-owned (`owner.type: User`), so there was no server-side path — not via API, not via
+the Settings → Rules UI. (The repo has since moved to the `neonwave-dev` org, which makes the
+ruleset path available.)
+
+Substitutes, in order of preference:
+- **CI guard** (works on user repos): a `Branch Name` workflow that validates `github.head_ref`
+  against the convention regex on every PR and fails non-conforming branches. Bots
+  (`dependabot/*`, `changeset-release/*`) are exempt. This is `.github/workflows/branch-name.yml`.
+  Optionally promote it to a *required* status check once it has run green once.
+- **Client-side**: the `branch-pattern` skill already blocks bad names at `git checkout -b` time.
+- **Transfer to an org**: only then does the `branch_name_pattern` ruleset rule become available.
+
+**Principle:** `harden` must branch on `owner.type`. For `User` repos, emit the CI guard instead
+of a `branch_name_pattern` ruleset; reserve the ruleset path for `Organization` repos.
+
+### 3.6 Defaults that surprise
 - **Secret scanning + push protection**: auto-ON for public repos (free). No action needed.
 - **Dependabot _alerts_ and _security updates_**: **OFF by default** even when `dependabot.yml`
   exists — the version-update config and the security features are independent. Must be enabled
@@ -134,7 +155,7 @@ Legend: **A** = fully automatable (API/commit) · **M** = manual (human only) ·
 | Security | dependency graph | A | on by default (public) |
 | Security | secret scanning + push protection | A | on by default (public); else `PATCH /repos` `security_and_analysis` |
 | Security | private vulnerability reporting | A | `PUT /repos/{o}/{r}/private-vulnerability-reporting` |
-| Security | CodeQL | A | commit `codeql.yml` (advanced) **or** `PUT …/code-scanning/default-setup` |
+| Security | CodeQL | A | commit `codeql.yml` (advanced) **or** `PATCH …/code-scanning/default-setup` |
 | Security | OpenSSF Scorecard | A | commit `scorecard.yml` (ossf/scorecard-action) |
 | Bots | CodeRabbit config | A | commit `.coderabbit.yaml` |
 | Bots | **CodeRabbit app install** | **M** | GitHub App — no API; one-time per account/repo |
