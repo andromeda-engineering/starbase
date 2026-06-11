@@ -82,7 +82,7 @@ PR). Resolution chosen: **require 1 approval but allow admin bypass** (`enforce_
 **Principle:** repo topology (solo vs team) is an input, not an assumption. Default to admin
 bypass until a second maintainer exists.
 
-### 3.6 `branch_name_pattern` is org-only — user repos can't enforce naming server-side
+### 3.5 `branch_name_pattern` is org-only — user repos can't enforce naming server-side
 Enforcing the branch-naming convention (the `branch-pattern` regex) as a ruleset rule
 (`branch_name_pattern`, one of GitHub's **metadata restriction** rules) fails on a
 **personally-owned** repo. The API returns `422 Validation Failed — Invalid rule
@@ -101,7 +101,7 @@ Substitutes, in order of preference:
 **Principle:** `harden` must branch on `owner.type`. For `User` repos, emit the CI guard instead
 of a `branch_name_pattern` ruleset; reserve the ruleset path for `Organization` repos.
 
-### 3.5 Defaults that surprise
+### 3.6 Defaults that surprise
 - **Secret scanning + push protection**: auto-ON for public repos (free). No action needed.
 - **Dependabot _alerts_ and _security updates_**: **OFF by default** even when `dependabot.yml`
   exists — the version-update config and the security features are independent. Must be enabled
@@ -153,7 +153,7 @@ Legend: **A** = fully automatable (API/commit) · **M** = manual (human only) ·
 | Security | dependency graph | A | on by default (public) |
 | Security | secret scanning + push protection | A | on by default (public); else `PATCH /repos` `security_and_analysis` |
 | Security | private vulnerability reporting | A | `PUT /repos/{o}/{r}/private-vulnerability-reporting` |
-| Security | CodeQL | A | commit `codeql.yml` (advanced) **or** `PUT …/code-scanning/default-setup` |
+| Security | CodeQL | A | commit `codeql.yml` (advanced) **or** `PATCH …/code-scanning/default-setup` |
 | Security | OpenSSF Scorecard | A | commit `scorecard.yml` (ossf/scorecard-action) |
 | Bots | CodeRabbit config | A | commit `.coderabbit.yaml` |
 | Bots | **CodeRabbit app install** | **M** | GitHub App — no API; one-time per account/repo |
