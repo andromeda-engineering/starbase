@@ -19,7 +19,7 @@ This repo currently contains only a minimal monorepo scaffold:
 ## Repository
 
 ```text
-github.com/MyNameReallySux/neonos
+github.com/neonwave-dev/neon-os
 ```
 
 ## Package Scope

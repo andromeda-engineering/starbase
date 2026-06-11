@@ -6,7 +6,7 @@
   "description": "NeonOS — an open-source AI-native developer environment for repo setup, agent configuration, local memory, and repeatable coding workflows.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MyNameReallySux/neonos.git"
+    "url": "git+https://github.com/neonwave-dev/neon-os.git"
   },
   "license": "MIT",
   "packageManager": "pnpm@9.15.0",

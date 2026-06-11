@@ -2,7 +2,7 @@
 
 NeonOS is an opinionated, open-source, **Rust-first AI-native developer environment**
 exposed as the `neon` CLI: repo setup, local tooling, agent configuration, project
-memory, and repeatable development workflows. Repo: `MyNameReallySux/neonos`.
+memory, and repeatable development workflows. Repo: `neonwave-dev/neon-os`.
 
 > These instructions are authoritative for work in this repo. The user's global
 > conventions (`~/.claude/CLAUDE.md`) still apply — especially the Windows/PowerShell
