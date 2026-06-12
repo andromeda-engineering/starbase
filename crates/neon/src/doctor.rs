@@ -2,22 +2,24 @@ use anyhow::Result;
 use std::io::IsTerminal;
 use std::process::Command;
 
-// ─── Data collection ──────────────────────────────────────────────────────────
+pub mod widgets;
 
-struct ToolInfo {
-    name: String,
-    version: String,
+// --- Data collection ---
+
+pub struct ToolInfo {
+    pub name: String,
+    pub version: String,
 }
 
-struct GitIdentity {
-    user_name: String,
-    user_email: String,
+pub struct GitIdentity {
+    pub user_name: String,
+    pub user_email: String,
 }
 
-struct RepoHealth {
-    branch: String,
-    short_head: String,
-    dirty_count: usize,
+pub struct RepoHealth {
+    pub branch: String,
+    pub short_head: String,
+    pub dirty_count: usize,
 }
 
 struct DiagData {
@@ -64,7 +66,7 @@ fn or_not_set(value: String) -> String {
 }
 
 fn collect() -> DiagData {
-    // Tool versions – ask each tool for its version string.
+    // Tool versions -- ask each tool for its version string.
     let tools = vec![
         ToolInfo {
             name: "git".to_string(),
@@ -139,7 +141,7 @@ fn collect() -> DiagData {
     }
 }
 
-// ─── Plain-text report (non-interactive / CI) ─────────────────────────────────
+// --- Plain-text report (non-interactive / CI) ---
 
 fn format_plain(data: &DiagData) -> String {
     use std::fmt::Write;
@@ -168,12 +170,12 @@ fn print_plain(data: &DiagData) {
     print!("{}", format_plain(data));
 }
 
-// ─── TUI (interactive) ────────────────────────────────────────────────────────
+// --- TUI (interactive) ---
 
 fn run_tui(data: &DiagData) -> Result<()> {
     let mut terminal = ratatui::init();
     let result = tui_loop(&mut terminal, data);
-    // Always restore – ignore restore errors so we can surface the loop error.
+    // Always restore -- ignore restore errors so we can surface the loop error.
     ratatui::restore();
     result?;
     Ok(())
@@ -182,34 +184,8 @@ fn run_tui(data: &DiagData) -> Result<()> {
 fn tui_loop(terminal: &mut ratatui::DefaultTerminal, data: &DiagData) -> Result<()> {
     use crossterm::event::{self, KeyCode, KeyEventKind};
     use ratatui::layout::{Constraint, Direction, Layout};
-    use ratatui::text::{Line, Span, Text};
-    use ratatui::widgets::{Block, Paragraph};
 
-    // Pre-build text for each pane so we don't re-allocate every frame.
-    let tooling_text: Text = {
-        let lines: Vec<Line> = data
-            .tools
-            .iter()
-            .map(|t| {
-                Line::from(vec![
-                    Span::raw(format!("  {:>6}  ", t.name)),
-                    Span::raw(t.version.clone()),
-                ])
-            })
-            .collect();
-        Text::from(lines)
-    };
-
-    let identity_text: Text = Text::from(vec![
-        Line::from(format!("  name:   {}", data.identity.user_name)),
-        Line::from(format!("  email:  {}", data.identity.user_email)),
-    ]);
-
-    let health_text: Text = Text::from(vec![
-        Line::from(format!("  branch:  {}", data.health.branch)),
-        Line::from(format!("  HEAD:    {}", data.health.short_head)),
-        Line::from(format!("  dirty:   {} file(s)", data.health.dirty_count)),
-    ]);
+    use widgets::{GitIdentityPane, RepoHealthPane, ToolingPane};
 
     loop {
         terminal.draw(|frame| {
@@ -231,22 +207,17 @@ fn tui_loop(terminal: &mut ratatui::DefaultTerminal, data: &DiagData) -> Result<
                 ])
                 .split(outer[0]);
 
-            // Pane 1 – Tooling
-            let tooling =
-                Paragraph::new(tooling_text.clone()).block(Block::bordered().title(" Tooling "));
-            frame.render_widget(tooling, panes[0]);
+            // Pane 1 -- Tooling
+            frame.render_widget(ToolingPane::new(&data.tools), panes[0]);
 
-            // Pane 2 – Git Identity
-            let identity = Paragraph::new(identity_text.clone())
-                .block(Block::bordered().title(" Git Identity "));
-            frame.render_widget(identity, panes[1]);
+            // Pane 2 -- Git Identity
+            frame.render_widget(GitIdentityPane::new(&data.identity), panes[1]);
 
-            // Pane 3 – Repo Health
-            let health =
-                Paragraph::new(health_text.clone()).block(Block::bordered().title(" Repo Health "));
-            frame.render_widget(health, panes[2]);
+            // Pane 3 -- Repo Health
+            frame.render_widget(RepoHealthPane::new(&data.health), panes[2]);
 
             // Footer hint
+            use ratatui::widgets::Paragraph;
             let footer = Paragraph::new("  q / Esc  quit");
             frame.render_widget(footer, outer[1]);
         })?;
@@ -264,7 +235,7 @@ fn tui_loop(terminal: &mut ratatui::DefaultTerminal, data: &DiagData) -> Result<
     }
 }
 
-// ─── Public entry point ───────────────────────────────────────────────────────
+// --- Public entry point ---
 
 pub fn gather() -> Result<()> {
     let data = collect();
@@ -277,7 +248,7 @@ pub fn gather() -> Result<()> {
     }
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+// --- Tests ---
 
 #[cfg(test)]
 mod tests {

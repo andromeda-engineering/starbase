@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
-mod doctor;
+use neon_cli::doctor;
 
 /// NeonOS CLI – developer environment diagnostics and tooling
 #[derive(Parser)]
