@@ -28,13 +28,41 @@ struct DiagData {
     health: RepoHealth,
 }
 
+/// Build a `Command` that can resolve `.cmd`/`.bat` shims on Windows.
+///
+/// On Windows, `Command::new(program)` only finds the bare executable name on
+/// PATH — it does not consult PATHEXT, so corepack shims like `pnpm.cmd` are
+/// invisible. Routing through `cmd /c` gives us the shell's full PATHEXT
+/// resolution at essentially no extra cost.
+///
+/// On non-Windows platforms we return a direct `Command::new(program)` so the
+/// behaviour and performance are identical to the old code.
+#[cfg(windows)]
+fn make_command(program: &str) -> Command {
+    let mut cmd = Command::new("cmd");
+    // `/d` disables AutoRun registry commands so they can't inject extra output
+    // or side effects into the probe; `/c` runs the program and exits.
+    cmd.args(["/d", "/c", program]);
+    cmd
+}
+
+#[cfg(not(windows))]
+fn make_command(program: &str) -> Command {
+    Command::new(program)
+}
+
 /// Run a command and return trimmed stdout, or an error string on any failure.
 fn run(program: &str, args: &[&str]) -> String {
-    match Command::new(program).args(args).output() {
+    match make_command(program).args(args).output() {
         Err(_) => "not found".to_string(),
         Ok(out) => {
             if out.status.success() {
                 String::from_utf8_lossy(&out.stdout).trim().to_string()
+            } else if out.status.code() == Some(9009) {
+                // Windows `cmd /c <missing>` exits 9009 ("'x' is not recognized").
+                // Preserve the documented "not found" UX for absent tools rather
+                // than surfacing the shell's error text.
+                "not found".to_string()
             } else {
                 // Treat non-zero exit as not available / unknown
                 let stderr = String::from_utf8_lossy(&out.stderr);
@@ -290,5 +318,17 @@ mod tests {
         assert!(report.contains("=== Repo Health ==="));
         assert!(report.contains("branch:    main"));
         assert!(report.contains("dirty:     2 file(s)"));
+    }
+
+    #[test]
+    fn run_rustc_version_resolves_on_this_platform() {
+        // `rustc` must exist to compile/run this test binary, so it's a more
+        // reliable probe than `git` (absent in minimal containers/tarballs).
+        // This exercises the make_command path end-to-end.
+        let out = run("rustc", &["--version"]);
+        assert!(
+            out.starts_with("rustc "),
+            "expected 'rustc ...', got: {out}"
+        );
     }
 }
