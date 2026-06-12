@@ -38,7 +38,9 @@ struct DiagData {
 #[cfg(windows)]
 fn make_command(program: &str) -> Command {
     let mut cmd = Command::new("cmd");
-    cmd.args(["/c", program]);
+    // `/d` disables AutoRun registry commands so they can't inject extra output
+    // or side effects into the probe; `/c` runs the program and exits.
+    cmd.args(["/d", "/c", program]);
     cmd
 }
 
@@ -54,6 +56,11 @@ fn run(program: &str, args: &[&str]) -> String {
         Ok(out) => {
             if out.status.success() {
                 String::from_utf8_lossy(&out.stdout).trim().to_string()
+            } else if out.status.code() == Some(9009) {
+                // Windows `cmd /c <missing>` exits 9009 ("'x' is not recognized").
+                // Preserve the documented "not found" UX for absent tools rather
+                // than surfacing the shell's error text.
+                "not found".to_string()
             } else {
                 // Treat non-zero exit as not available / unknown
                 let stderr = String::from_utf8_lossy(&out.stderr);
@@ -343,13 +350,14 @@ mod tests {
     }
 
     #[test]
-    fn run_git_version_resolves_on_this_platform() {
-        // git should be available on all CI platforms (Unix and Windows).
+    fn run_rustc_version_resolves_on_this_platform() {
+        // `rustc` must exist to compile/run this test binary, so it's a more
+        // reliable probe than `git` (absent in minimal containers/tarballs).
         // This exercises the make_command path end-to-end.
-        let out = run("git", &["--version"]);
+        let out = run("rustc", &["--version"]);
         assert!(
-            out.starts_with("git version"),
-            "expected 'git version ...', got: {out}"
+            out.starts_with("rustc "),
+            "expected 'rustc ...', got: {out}"
         );
     }
 }
