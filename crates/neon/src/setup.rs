@@ -69,7 +69,7 @@ fn make_command(program: &str) -> Command {
     Command::new(program)
 }
 
-fn on_path(program: &str) -> bool {
+pub(crate) fn on_path(program: &str) -> bool {
     #[cfg(windows)]
     {
         Command::new("cmd")

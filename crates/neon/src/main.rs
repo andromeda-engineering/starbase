@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 
 use neon_cli::doctor;
+use neon_cli::install::{self, InstallAppsArgs};
 use neon_cli::repo::{self, InitArgs};
 use neon_cli::setup::{
     self, DiagnosticsArgs, DockerLoginArgs, DockerLogoutArgs, DockerShowArgs, GitIdentityArgs,
@@ -60,6 +61,8 @@ enum SetupCommands {
     NpmToken(NpmTokenArgs),
     /// Print a status report of the dev environment
     Diagnostics(DiagnosticsArgs),
+    /// Install core apps (git, gh, docker, obsidian) — idempotent
+    InstallApps(InstallAppsArgs),
 }
 
 fn main() -> Result<()> {
@@ -79,6 +82,7 @@ fn main() -> Result<()> {
             SetupCommands::DockerShow(args) => setup::run_docker_show(&args)?,
             SetupCommands::NpmToken(args) => setup::run_npm_token(&args)?,
             SetupCommands::Diagnostics(args) => setup::run_diagnostics(&args)?,
+            SetupCommands::InstallApps(args) => install::run_install_apps(args)?,
         },
     }
 
