@@ -21,7 +21,7 @@ impl App {
         &[App::Git, App::Gh, App::Docker, App::Obsidian]
     }
 
-    /// Short name used in CLI `--apps` list and output lines.
+    /// Short name used in CLI `--tool` list and output lines.
     pub fn name(self) -> &'static str {
         match self {
             App::Git => "git",
@@ -259,7 +259,7 @@ pub enum AppAction {
     AlreadyInstalled,
     /// App will be installed using the given spec.
     WillInstall(InstallSpec),
-    /// App was not requested in `--apps`.
+    /// App was not requested in `--tool`.
     Skipped,
     /// Platform not yet supported for this app.
     PlatformUnsupported,
@@ -282,7 +282,7 @@ pub struct InstallPlan {
 
 /// Build a plan without executing anything.
 ///
-/// `requested` — the apps the user asked for (via `--apps`).
+/// `requested` — the apps the user asked for (via `--tool`).
 /// `platform` — the resolved platform.
 /// `check_installed` — injectable probe so the pure function is testable without
 ///   real PATH lookups.
@@ -453,7 +453,7 @@ pub fn print_summary(results: &[(&App, AppResult)]) {
 pub struct InstallAppsArgs {
     /// Comma-separated list of tools to install (default: all).
     /// Valid values: git, gh, docker, obsidian.
-    #[arg(long, value_name = "TOOLS")]
+    #[arg(long = "tool", value_name = "TOOLS")]
     pub tools: Option<String>,
 
     /// Print what would run without executing anything.
