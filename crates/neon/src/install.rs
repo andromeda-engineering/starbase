@@ -36,6 +36,9 @@ impl App {
         let mut apps = Vec::new();
         for token in s.split(',') {
             let t = token.trim();
+            if t.is_empty() {
+                continue;
+            }
             let app = match t {
                 "git" => App::Git,
                 "gh" => App::Gh,
@@ -105,15 +108,50 @@ impl InstallSpec {
 fn install_spec(app: App, platform: Platform) -> Option<InstallSpec> {
     match platform {
         Platform::Windows => Some(match app {
-            App::Git => InstallSpec::new("winget", &["install", "--id", "Git.Git", "-e"]),
-            App::Gh => InstallSpec::new("winget", &["install", "--id", "GitHub.cli", "-e"]),
+            App::Git => InstallSpec::new(
+                "winget",
+                &[
+                    "install",
+                    "--id",
+                    "Git.Git",
+                    "-e",
+                    "--accept-source-agreements",
+                    "--accept-package-agreements",
+                ],
+            ),
+            App::Gh => InstallSpec::new(
+                "winget",
+                &[
+                    "install",
+                    "--id",
+                    "GitHub.cli",
+                    "-e",
+                    "--accept-source-agreements",
+                    "--accept-package-agreements",
+                ],
+            ),
             App::Docker => InstallSpec::new(
                 "winget",
-                &["install", "--id", "Docker.DockerDesktop", "-e"],
+                &[
+                    "install",
+                    "--id",
+                    "Docker.DockerDesktop",
+                    "-e",
+                    "--accept-source-agreements",
+                    "--accept-package-agreements",
+                ],
             ),
-            App::Obsidian => {
-                InstallSpec::new("winget", &["install", "--id", "Obsidian.Obsidian", "-e"])
-            }
+            App::Obsidian => InstallSpec::new(
+                "winget",
+                &[
+                    "install",
+                    "--id",
+                    "Obsidian.Obsidian",
+                    "-e",
+                    "--accept-source-agreements",
+                    "--accept-package-agreements",
+                ],
+            ),
         }),
         Platform::Linux => Some(match app {
             App::Git => InstallSpec::new("sudo", &["apt-get", "install", "-y", "git"]),
@@ -137,7 +175,17 @@ fn install_spec(app: App, platform: Platform) -> Option<InstallSpec> {
                     "curl -fsSL https://get.docker.com | sudo sh",
                 ],
             ),
-            App::Obsidian => InstallSpec::new("snap", &["install", "obsidian", "--classic"]),
+            App::Obsidian => InstallSpec::new(
+                "bash",
+                &[
+                    "-c",
+                    "if command -v snap >/dev/null 2>&1; then \
+                     sudo snap install obsidian --classic; \
+                     elif command -v flatpak >/dev/null 2>&1; then \
+                     flatpak install -y flathub md.obsidian.Obsidian; \
+                     else echo 'error: neither snap nor flatpak found' >&2; exit 1; fi",
+                ],
+            ),
         }),
         Platform::MacOs | Platform::Unknown => None,
     }
@@ -512,6 +560,12 @@ mod tests {
     #[test]
     fn parse_list_rejects_empty() {
         assert!(App::parse_list("").is_err());
+    }
+
+    #[test]
+    fn parse_list_ignores_trailing_comma() {
+        let apps = App::parse_list("git,").unwrap();
+        assert_eq!(apps, vec![App::Git]);
     }
 
     #[test]
