@@ -8,6 +8,7 @@ pub mod diagnostics;
 pub mod docker;
 pub mod git_identity;
 pub mod npm_token;
+pub mod packages;
 
 use anyhow::{Context, Result};
 use clap::{Args, ValueEnum};
@@ -24,6 +25,7 @@ pub use docker::{
 };
 pub use git_identity::{run as run_git_identity, GitIdentityArgs};
 pub use npm_token::{run as run_npm_token, NpmTokenArgs};
+pub use packages::{run as run_install_packages, InstallPackagesArgs};
 
 // ============================================================
 // SECTION 1 — detect machine capabilities (neon setup detect)
