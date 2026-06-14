@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted (design only — build deferred to a later phase)
+Accepted. Design landed (NEO-24); **build active** — the setup-TUI is the priority
+workstream, built in parallel with repo-init (epic NEO-27, Todo/High).
 
 ## Context
 
@@ -48,5 +49,10 @@ See `docs/architecture/setup-tui.md` for the pipeline, the command map, and the 
   both source repos.
 - Secrets steps (NPM_TOKEN, SSH keys, docker login) are multi-step and must never hardcode
   or commit secrets; they write to the standard per-tool config locations.
-- This is a sizable surface; it is **deferred to a later phase** and tracked as its own
-  Linear epic. Phase 1 ships only this design.
+- Phase 1 shipped only this design. The build is now active (epic NEO-27) and is the
+  priority workstream. Two new pipeline steps were added: **detect machine / OS** (NEO-46 —
+  platform probe) and **initialize Claude/agent environment** (NEO-47 — claude-config machine
+  bootstrap: links (symlinks on Unix, junctions on Windows) for `~/.claude/skills` +
+  `~/.claude/agents`, run sync-skills, provision
+  global `~/.claude/CLAUDE.md` + `local-config.md`; per-machine, distinct from the per-repo
+  agent setup in NEO-3).
