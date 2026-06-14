@@ -369,9 +369,16 @@ fn is_linked_to(link: &Path, expected_target: &Path) -> bool {
     let Ok(canonical_expected) = std::fs::canonicalize(expected_target) else {
         return false;
     };
-    // The actual link target might be relative or carry UNC prefixes.
-    // Canonicalizing resolves those.
-    let canonical_actual = std::fs::canonicalize(&actual).unwrap_or(actual);
+    // The actual link target might be relative (resolve against the link's parent) or
+    // carry UNC prefixes.  Canonicalizing both sides normalizes them for comparison.
+    let canonical_actual = if actual.is_absolute() {
+        std::fs::canonicalize(&actual).unwrap_or(actual)
+    } else {
+        link.parent()
+            .map(|parent| parent.join(&actual))
+            .and_then(|abs| std::fs::canonicalize(&abs).ok())
+            .unwrap_or(actual)
+    };
     canonical_actual == canonical_expected
 }
 
@@ -384,15 +391,14 @@ fn create_link(link: &Path, target: &Path) -> Result<()> {
     #[cfg(windows)]
     {
         let status = std::process::Command::new("cmd")
-            .args([
-                "/c",
-                "mklink",
-                "/J",
-                &link.to_string_lossy(),
-                &target.to_string_lossy(),
-            ])
+            .arg("/d")
+            .arg("/c")
+            .arg("mklink")
+            .arg("/J")
+            .arg(link.as_os_str())
+            .arg(target.as_os_str())
             .status()
-            .context("failed to run cmd /c mklink /J")?;
+            .context("failed to run cmd /d /c mklink /J")?;
         if !status.success() {
             anyhow::bail!(
                 "mklink /J failed (exit {}): {} -> {}",
@@ -539,7 +545,9 @@ fn run_skill_sync(claude_config: &Path, dry_run: bool) -> Result<()> {
         return Ok(());
     }
     let status = std::process::Command::new("pwsh")
-        .args(["-NonInteractive", "-File", &sync_script.to_string_lossy()])
+        .arg("-NonInteractive")
+        .arg("-File")
+        .arg(sync_script.as_os_str())
         .status()
         .context("failed to launch pwsh for sync-skills.ps1")?;
     if status.success() {
@@ -594,7 +602,11 @@ pub fn run_claude(args: SetupClaudeArgs) -> Result<()> {
         }
         None => match find_claude_config(&home) {
             Some(p) => {
-                println!("  Found claude-config at: {}", p.display());
+                if dry_run {
+                    println!("[dry-run] [~] claude-config: found at {}", p.display());
+                } else {
+                    println!("  Found claude-config at: {}", p.display());
+                }
                 p
             }
             None => {
@@ -613,7 +625,9 @@ pub fn run_claude(args: SetupClaudeArgs) -> Result<()> {
                 );
                 if dry_run {
                     println!("[dry-run] [!] claude-config: not found");
-                    println!("{msg}");
+                    for line in msg.lines() {
+                        println!("[dry-run]     {line}");
+                    }
                     return Ok(());
                 }
                 anyhow::bail!("{msg}");
@@ -803,15 +817,14 @@ mod tests {
 
         std::fs::create_dir_all(&target).expect("create target dir");
         let out = std::process::Command::new("cmd")
-            .args([
-                "/c",
-                "mklink",
-                "/J",
-                &link.to_string_lossy(),
-                &target.to_string_lossy(),
-            ])
+            .arg("/d")
+            .arg("/c")
+            .arg("mklink")
+            .arg("/J")
+            .arg(link.as_os_str())
+            .arg(target.as_os_str())
             .output()
-            .expect("cmd mklink /J");
+            .expect("cmd /d /c mklink /J");
 
         // Clean up regardless of assertion result.
         let linked = is_linked_to(&link, &target);
