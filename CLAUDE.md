@@ -16,7 +16,7 @@ Hybrid monorepo (see `docs/adr/0001-use-hybrid-turborepo-cargo-workspace.md`):
   The CLI binary crate is `crates/neon`. Toolchain pinned by `rust-toolchain.toml`.
 - **TypeScript/JS** (Turborepo + pnpm) — apps and packages. Apps in `apps/`
   (incl. the Astro Starlight docs site at `apps/docs`), shared packages in `packages/`.
-- Root config: `Cargo.toml`, `pnpm-workspace.toml`, `turbo.json`, `tsconfig.base.json`.
+- Root config: `Cargo.toml`, `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`.
 
 Phase docs in `docs/product/`, decisions in `docs/adr/`, architecture in
 `docs/architecture/`. Read the relevant ones before changing a surface they describe.

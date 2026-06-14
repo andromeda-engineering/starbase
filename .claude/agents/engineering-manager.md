@@ -12,7 +12,7 @@ is usually a **structured plan** the script fans out — return data, not prose,
 schema is supplied.
 
 Read `CLAUDE.md`, `docs/product/`, `docs/adr/`, and `docs/architecture/` first, plus the
-existing workspace manifests (`Cargo.toml`, `pnpm-workspace.toml`, `turbo.json`) so your
+existing workspace manifests (`Cargo.toml`, `pnpm-workspace.yaml`, `turbo.json`) so your
 plan fits the real layout.
 
 ## Planning a slice
