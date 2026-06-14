@@ -7,6 +7,7 @@ pub mod common;
 pub mod diagnostics;
 pub mod docker;
 pub mod git_identity;
+pub mod languages;
 pub mod npm_token;
 
 use anyhow::{Context, Result};
@@ -23,6 +24,7 @@ pub use docker::{
     DockerLoginArgs, DockerLogoutArgs, DockerShowArgs,
 };
 pub use git_identity::{run as run_git_identity, GitIdentityArgs};
+pub use languages::{run as run_install_languages, InstallLanguagesArgs};
 pub use npm_token::{run as run_npm_token, NpmTokenArgs};
 
 // ============================================================
