@@ -949,6 +949,30 @@ fn prompt_terminal() -> Result<TerminalChoice> {
         .ok_or_else(|| anyhow::anyhow!("unexpected selection"))
 }
 
+// --- Platform validation ---
+
+fn validate_shell_choice(choice: ShellChoice) -> Result<()> {
+    if ShellChoice::platform_choices().contains(&choice) {
+        Ok(())
+    } else {
+        anyhow::bail!(
+            "shell '{}' is not supported on this platform",
+            choice.as_str()
+        )
+    }
+}
+
+fn validate_terminal_choice(choice: TerminalChoice) -> Result<()> {
+    if TerminalChoice::platform_choices().contains(&choice) {
+        Ok(())
+    } else {
+        anyhow::bail!(
+            "terminal '{}' is not supported on this platform",
+            choice.as_str()
+        )
+    }
+}
+
 // --- Public entry points ---
 
 pub fn run_pick_shell(args: PickShellArgs) -> Result<()> {
@@ -956,6 +980,7 @@ pub fn run_pick_shell(args: PickShellArgs) -> Result<()> {
         Some(c) => c,
         None => prompt_shell()?,
     };
+    validate_shell_choice(choice)?;
 
     let path = config_path()?;
 
@@ -981,6 +1006,7 @@ pub fn run_pick_terminal(args: PickTerminalArgs) -> Result<()> {
         Some(c) => c,
         None => prompt_terminal()?,
     };
+    validate_terminal_choice(choice)?;
 
     let path = config_path()?;
 
