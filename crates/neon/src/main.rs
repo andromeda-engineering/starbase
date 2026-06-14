@@ -5,8 +5,9 @@ use neon_cli::doctor;
 use neon_cli::install::{self, InstallAppsArgs};
 use neon_cli::repo::{self, InitArgs};
 use neon_cli::setup::{
-    self, DiagnosticsArgs, DockerLoginArgs, DockerLogoutArgs, DockerShowArgs, GitIdentityArgs,
-    NpmTokenArgs, PickShellArgs, PickTerminalArgs, SetupClaudeArgs,
+    self, CustomizeTerminalArgs, DiagnosticsArgs, DockerLoginArgs, DockerLogoutArgs,
+    DockerShowArgs, GitIdentityArgs, NpmTokenArgs, PickShellArgs, PickTerminalArgs,
+    SetupClaudeArgs,
 };
 
 /// NeonOS CLI — developer environment diagnostics and tooling
@@ -67,6 +68,8 @@ enum SetupCommands {
     PickShell(PickShellArgs),
     /// Pick and persist the preferred terminal
     PickTerminal(PickTerminalArgs),
+    /// Apply a YAML color theme to Windows Terminal
+    CustomizeTerminal(CustomizeTerminalArgs),
 }
 
 fn main() -> Result<()> {
@@ -89,6 +92,7 @@ fn main() -> Result<()> {
             SetupCommands::InstallApps(args) => install::run_install_apps(args)?,
             SetupCommands::PickShell(args) => setup::run_pick_shell(args)?,
             SetupCommands::PickTerminal(args) => setup::run_pick_terminal(args)?,
+            SetupCommands::CustomizeTerminal(args) => setup::run_customize_terminal(&args)?,
         },
     }
 
