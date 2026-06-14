@@ -197,6 +197,40 @@ Legend: **A** = fully automatable (API/commit) · **M** = manual (human only) ·
 The generator should take a small config object (a `neon.repo.toml` or prompts) and derive the
 rest. OSS + solo + both-languages + defer-publish was the profile used for neon-os.
 
+### 7.1 Repo type matrix
+
+`neon repo init` supports a three-axis repo-type matrix (NEO-48). These axes extend the
+`RepoProfile` struct and drive template selection, scaffold content, LICENSE generation, and
+README badge output:
+
+| Axis | Values | Notes |
+|---|---|---|
+| `visibility` | `public` \| `private` | Already exists in `RepoProfile`. Public ⇒ free secret scanning, Community Standards; private ⇒ paid security features, Renovate over Dependabot. |
+| `license` | `MIT` \| `Apache-2.0` \| `GPL-3.0` \| `BSD-3-Clause` \| `MPL-2.0` \| `Unlicense` \| `none` (proprietary) | **New axis** — not in `RepoProfile` today. Drives which `LICENSE` text is generated and which README badge is shown. Prompted/required especially for public repos; `none` suppresses the LICENSE file. |
+| `languages` | `ts` (TypeScript turborepo) \| `both` (TypeScript + Rust turborepo) \| `rust` (Cargo workspace only) \| `bare` (no TS/Rust — only community/docs/.github files) | `bare` is a **new variant** (no TS/Rust scaffold, community files only). Drives CI jobs, CodeQL languages, Dependabot ecosystems. |
+
+Mapping onto `RepoProfile`:
+- `visibility` — existing field; no change to its semantics.
+- `license` — new field; add to `RepoProfile` alongside the existing scaffold inputs.
+- `languages` — existing field extended with the `bare` variant. `bare` skips `Cargo.toml` /
+  `pnpm-workspace.yaml` scaffold and emits only community health files, `docs/`, and
+  `.github/`.
+
+Implementation tracked in NEO-48 (matrix) and NEO-49 (interactive wizard).
+
+### 7.2 Interactive configuration
+
+`neon repo init` with no flags (or with some flags missing) walks an interactive wizard:
+
+- Built in Rust using `clap` + `interactive-clap` derive macro + `inquire` (see ADR 0004).
+- Dependent prompts: `license` is prompted only when `visibility = public` (private repos
+  default to `none`/proprietary unless overridden).
+- `--yes` or a fully-flagged invocation bypasses all prompts — the CI / scripting contract.
+- The resolved `RepoProfile` is persisted (e.g. `neon.repo.toml`) so the same configuration
+  can be replayed by `neon repo harden` without re-prompting.
+
+Interactive wizard implementation tracked in NEO-49.
+
 ---
 
 ## 8. Reference implementation

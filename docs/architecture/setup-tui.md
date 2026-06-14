@@ -1,7 +1,7 @@
 # Architecture: Cross-Platform Setup TUI (`neon setup`)
 
-> Design note. Implements ADR 0003. **Build deferred** — this describes the target shape so
-> the work can be ticketed and executed in a later phase. Inputs:
+> Design note. Implements ADR 0003. **Build active** — workspace provisioning is the
+> priority workstream, built in parallel with repo-init. Inputs:
 > `powershell-profile` (Windows/PowerShell 7) and `zsh-profile` (Linux/WSL).
 
 ## Shape
@@ -19,27 +19,36 @@ converge to it).
 
 ## Pipeline (the user-facing order)
 
-1. **Pick a shell** — Windows: PowerShell 7 or WSL. (Drives every platform-specific step after.)
-2. **Pick a terminal** — Windows Terminal for now (extensible).
-3. **Customize the terminal** — settings, background, theme → via the theme adapter (below).
-4. **Install languages** — nvm→node, python, rust (each toggleable / version-pinnable).
-5. **Install core apps** — required-by-everything: git, docker, obsidian, …
-6. **Install packages** — zsh, oh-my-zsh/oh-my-posh, posh-git, lazygit, fzf, bat, zoxide, …
-7. **Select custom functions / aliases** — the reusable helpers from the profile repos.
-8. **Set environment variables + secrets** — multi-step: NPM_TOKEN, `.ssh` for git,
+1. **Detect machine / OS** — probe the host platform (OS family, architecture, distro) and
+   persist the result as the context for every downstream step. (NEO-46)
+2. **Pick a shell** — Windows: PowerShell 7 or WSL. (Drives every platform-specific step after.)
+3. **Pick a terminal** — Windows Terminal for now (extensible).
+4. **Customize the terminal** — settings, background, theme → via the theme adapter (below).
+5. **Install languages** — nvm→node, python, rust (each toggleable / version-pinnable).
+6. **Install core apps** — required-by-everything: git, docker, obsidian, …
+7. **Install packages** — zsh, oh-my-zsh/oh-my-posh, posh-git, lazygit, fzf, bat, zoxide, …
+8. **Select custom functions / aliases** — the reusable helpers from the profile repos.
+9. **Set environment variables + secrets** — multi-step: NPM_TOKEN, `.ssh` for git,
    docker login, … (never hardcoded; written to standard per-tool locations).
-9. **Set up the shell profile** — wire `$PROFILE` / `.zshrc` to the NeonOS-managed profile.
-10. **Done** — final diagnostics: detect anything missing and report.
+10. **Set up the shell profile** — wire `$PROFILE` / `.zshrc` to the NeonOS-managed profile.
+11. **Initialize Claude / agent environment** — claude-config machine bootstrap: links
+    (symlinks on Unix, junctions on Windows) for `~/.claude/skills` + `~/.claude/agents`,
+    run sync-skills, provision global
+    `~/.claude/CLAUDE.md` + `local-config.md`. Per-machine; distinct from per-repo agent
+    setup (NEO-3). (NEO-47)
+12. **Done** — final diagnostics: detect anything missing and report.
 
 ## Micro-CLI command map
 
 Reuse the already-discrete functions from both source repos. Two classes:
 
-### Cross-platform (one implementation, ~6)
+### Cross-platform (one implementation, ~8)
 Direct ports of functions that already exist on both sides:
 
 | Step | Source (PowerShell → zsh) |
 |---|---|
+| `detect` (platform probe: OS family, arch, distro) | NEO-46 — new |
+| `claude` (claude-config bootstrap: links (symlinks/junctions), sync-skills, global config) | NEO-47 — new |
 | `set-git-identity` (local, remote-rewrite to SSH alias) | `Set-LocalGitIdentity` → `set-git-identity` |
 | `set-global-git-identity` | `Set-GlobalGitIdentity` → `set-global-git-identity` |
 | `docker-login` / `docker-logout` / `show-docker-identity` | `Profile.Docker.psm1` → `docker.zsh` |
