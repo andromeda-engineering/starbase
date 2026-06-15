@@ -1,0 +1,49 @@
+# Synthwave84 — default NeonOS terminal theme
+#
+# Based on the Synthwave84 color scheme for Windows Terminal.
+# Appearance is written to profiles.defaults by default (pass --profile <name>
+# to target a specific profile).
+#
+# background_image_pool: neon picks one at random each run.
+# Paths support ~ for the home directory.
+
+name: "Synthwave84"
+
+palette:
+  black:          "#1A1A2E"
+  red:            "#F97E72"
+  green:          "#72F1B8"
+  yellow:         "#FEDE5D"
+  blue:           "#2B9FFF"
+  magenta:        "#7B2FBE"
+  cyan:           "#36F9F6"
+  white:          "#FFFFFF"
+  bright_black:   "#495495"
+  bright_red:     "#F97E72"
+  bright_green:   "#72F1B8"
+  bright_yellow:  "#FEDE5D"
+  bright_blue:    "#2B9FFF"
+  bright_magenta: "#FF7EDB"
+  bright_cyan:    "#36F9F6"
+  bright_white:   "#FFFFFF"
+  cursor:              "#FF7EDB"
+  selection_background: "#7B2FBE"
+  background:     "#262335"
+  foreground:     "#FFFFFF"
+
+appearance:
+  font_face:   "FiraCode Nerd Font Mono"
+  font_size:   11.0
+  opacity:     12
+  cursor_shape: "bar"
+  background_image_pool:
+    - "~/Pictures/terminal-bg/synthwave-bg (1).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (2).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (3).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (4).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (5).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (6).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (7).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (8).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (9).jpeg"
+    - "~/Pictures/terminal-bg/synthwave-bg (10).jpeg"
