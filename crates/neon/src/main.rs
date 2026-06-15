@@ -1,4 +1,4 @@
-use anyhow::Result;
+﻿use anyhow::Result;
 use clap::{Parser, Subcommand};
 
 use neon_cli::doctor;
@@ -6,8 +6,8 @@ use neon_cli::install::{self, InstallAppsArgs};
 use neon_cli::repo::{self, InitArgs};
 use neon_cli::setup::{
     self, CustomizeTerminalArgs, DiagnosticsArgs, DockerLoginArgs, DockerLogoutArgs,
-    DockerShowArgs, GitIdentityArgs, NpmTokenArgs, PickShellArgs, PickTerminalArgs,
-    SetupClaudeArgs,
+    DockerShowArgs, GitIdentityArgs, InstallLanguagesArgs, NpmTokenArgs, PickShellArgs,
+    PickTerminalArgs, SetupClaudeArgs,
 };
 
 /// NeonOS CLI — developer environment diagnostics and tooling
@@ -64,6 +64,8 @@ enum SetupCommands {
     Diagnostics(DiagnosticsArgs),
     /// Install core apps (git, gh, docker, obsidian) — idempotent
     InstallApps(InstallAppsArgs),
+    /// Install language runtimes (node via nvm if absent, python, rust, go)
+    InstallLanguages(InstallLanguagesArgs),
     /// Pick and persist the preferred shell
     PickShell(PickShellArgs),
     /// Pick and persist the preferred terminal
@@ -90,6 +92,7 @@ fn main() -> Result<()> {
             SetupCommands::NpmToken(args) => setup::run_npm_token(&args)?,
             SetupCommands::Diagnostics(args) => setup::run_diagnostics(&args)?,
             SetupCommands::InstallApps(args) => install::run_install_apps(args)?,
+            SetupCommands::InstallLanguages(args) => setup::run_install_languages(&args)?,
             SetupCommands::PickShell(args) => setup::run_pick_shell(args)?,
             SetupCommands::PickTerminal(args) => setup::run_pick_terminal(args)?,
             SetupCommands::CustomizeTerminal(args) => setup::run_customize_terminal(&args)?,
