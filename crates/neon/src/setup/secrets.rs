@@ -31,6 +31,18 @@ pub struct SecretsArgs {
 
 // --- Step filter ---
 
+/// Trim whitespace off each `--steps` value and drop empty entries.
+///
+/// Lets `--steps "npm, ssh"` work as expected instead of comparing the
+/// untrimmed `" ssh"` verbatim against known step names.
+fn normalize_steps(steps: &[String]) -> Vec<String> {
+    steps
+        .iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
 /// Returns `true` when the given step should run.
 ///
 /// If `steps` is empty every step runs.  Unknown names are ignored (they may
@@ -63,11 +75,34 @@ fn npmrc_path() -> Option<PathBuf> {
 
 const NPM_REGISTRY: &str = "https://registry.npmjs.org";
 
-/// Check whether the npm auth token line is already present in `~/.npmrc`.
+/// Check whether the npm auth token line is already present in `~/.npmrc`
+/// *with a non-empty value* — a bare `key=` (or `key=   `) line is treated as
+/// unconfigured so the prompt still fires and fills it in.
 pub(crate) fn npmrc_has_token(content: &str) -> bool {
     let key = registry_to_key(NPM_REGISTRY);
     let prefix = format!("{key}=");
-    content.lines().any(|l| l.trim_start().starts_with(&prefix))
+    content.lines().any(|l| {
+        let trimmed = l.trim_start();
+        trimmed
+            .strip_prefix(&prefix)
+            .is_some_and(|value| !value.trim().is_empty())
+    })
+}
+
+/// Restrict `path` to owner-only read/write (`0600`) so a freshly written or
+/// previously-permissive `.npmrc` doesn't leave the NPM token world/group
+/// readable.
+#[cfg(unix)]
+fn secure_npmrc_perms(path: &std::path::Path) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
+        .with_context(|| format!("setting permissions on {}", path.display()))
+}
+
+/// No portable permission-bits equivalent on non-Unix platforms; no-op.
+#[cfg(not(unix))]
+fn secure_npmrc_perms(_path: &std::path::Path) -> Result<()> {
+    Ok(())
 }
 
 fn run_npm_step(dry_run: bool) -> Result<()> {
@@ -115,6 +150,7 @@ fn run_npm_step(dry_run: bool) -> Result<()> {
             .with_context(|| format!("creating directory {}", parent.display()))?;
     }
     std::fs::write(&path, &updated).with_context(|| format!("writing {}", path.display()))?;
+    secure_npmrc_perms(&path)?;
 
     println!("  \u{2713} Written to {}", path.display());
     Ok(())
@@ -130,7 +166,7 @@ fn run_npm_step(dry_run: bool) -> Result<()> {
 pub struct SshIdentity {
     /// The `Host` alias used in `~/.ssh/config` (e.g. `github-personal`).
     pub alias: String,
-    /// GitHub / GitLab username associated with this key.
+    /// GitHub username associated with this key.
     pub username: String,
     /// Path to the SSH private key (tilde-expanded at use time).
     pub key: String,
@@ -154,6 +190,28 @@ fn ssh_identities_path() -> Option<PathBuf> {
 
 // --- Pure helpers (tested below) ---
 
+/// Validate `alias`/`key` *before* they're interpolated into `~/.ssh/config`.
+///
+/// Rejects embedded CR/LF (config-injection — a newline could smuggle extra
+/// `Host`/directive lines into the file), an empty `key`, and whitespace in
+/// `alias` (this tool only ever writes a single-alias `Host <alias>` line, so
+/// a space would silently turn one identity into multiple host aliases).
+fn validate_host_entry_fields(alias: &str, key: &str) -> Result<()> {
+    if alias.contains('\r') || alias.contains('\n') {
+        anyhow::bail!("SSH host alias must not contain CR/LF characters");
+    }
+    if key.contains('\r') || key.contains('\n') {
+        anyhow::bail!("SSH key path must not contain CR/LF characters");
+    }
+    if alias.chars().any(char::is_whitespace) {
+        anyhow::bail!("SSH host alias must not contain whitespace: {alias:?}");
+    }
+    if key.is_empty() {
+        anyhow::bail!("SSH key path must not be empty");
+    }
+    Ok(())
+}
+
 /// Build a `~/.ssh/config` `Host` block for one identity.
 ///
 /// ```text
@@ -162,26 +220,53 @@ fn ssh_identities_path() -> Option<PathBuf> {
 ///     User git
 ///     IdentityFile ~/.ssh/id_ed25519_personal
 /// ```
-pub(crate) fn format_host_entry(alias: &str, key: &str) -> String {
-    format!("Host {alias}\n    HostName github.com\n    User git\n    IdentityFile {key}\n")
+pub(crate) fn format_host_entry(alias: &str, key: &str) -> Result<String> {
+    validate_host_entry_fields(alias, key)?;
+    // `key` is guaranteed non-empty by validation above, but keep this
+    // conditional so the invariant ("never render a blank IdentityFile") is
+    // also enforced at the render site, not just at the validation gate.
+    let identity_line = if key.is_empty() {
+        String::new()
+    } else {
+        format!("    IdentityFile {key}\n")
+    };
+    Ok(format!(
+        "Host {alias}\n    HostName github.com\n    User git\n{identity_line}"
+    ))
 }
 
-/// Return `true` if `~/.ssh/config` already contains a `Host <alias>` block.
+/// Return `true` if `~/.ssh/config` already contains a `Host` line naming `alias`.
+///
+/// Handles multi-alias lines (`Host a b`) and inline `#` comments (`Host x # note`).
+/// Still requires a whole-token match, so `alias = "github"` does not match
+/// `Host github-personal`.
 pub(crate) fn ssh_config_has_host(content: &str, alias: &str) -> bool {
-    let needle = format!("Host {alias}");
-    content.lines().any(|l| l.trim() == needle.trim())
+    for line in content.lines() {
+        let line = line.trim();
+        let Some(rest) = line
+            .strip_prefix("Host")
+            .filter(|r| r.is_empty() || r.starts_with(char::is_whitespace) || r.starts_with('#'))
+        else {
+            continue;
+        };
+        let rest = rest.split('#').next().unwrap_or("");
+        if rest.split_whitespace().any(|token| token == alias) {
+            return true;
+        }
+    }
+    false
 }
 
 /// Append a host block to the ssh config content, ensuring a blank separator line.
-pub(crate) fn append_ssh_host(content: &str, alias: &str, key: &str) -> String {
-    let entry = format_host_entry(alias, key);
-    if content.is_empty() {
+pub(crate) fn append_ssh_host(content: &str, alias: &str, key: &str) -> Result<String> {
+    let entry = format_host_entry(alias, key)?;
+    Ok(if content.is_empty() {
         entry
     } else if content.ends_with('\n') {
         format!("{content}\n{entry}")
     } else {
         format!("{content}\n\n{entry}")
-    }
+    })
 }
 
 // --- File I/O ---
@@ -207,7 +292,24 @@ fn save_ssh_identities(path: &PathBuf, file: &SshIdentityFile) -> Result<()> {
     Ok(())
 }
 
-fn run_one_ssh_identity() -> Result<Option<SshIdentity>> {
+/// When `alias` is already present in `~/.ssh/config`, decide which identity
+/// to keep on record: the pre-existing entry in the identity store (if any)
+/// is preserved rather than overwritten by the freshly-entered one, so
+/// `~/.ssh/config` (untouched) and `ssh-identities.toml` never disagree
+/// about which key is active for `alias`.
+fn resolve_existing_identity(
+    existing_identities: &SshIdentityFile,
+    freshly_entered: SshIdentity,
+) -> SshIdentity {
+    existing_identities
+        .identity
+        .iter()
+        .find(|e| e.alias == freshly_entered.alias)
+        .cloned()
+        .unwrap_or(freshly_entered)
+}
+
+fn run_one_ssh_identity(existing_identities: &SshIdentityFile) -> Result<Option<SshIdentity>> {
     let alias = inquire::Text::new("Host alias (e.g. github-personal):")
         .prompt()
         .context("alias prompt cancelled")?;
@@ -221,11 +323,17 @@ fn run_one_ssh_identity() -> Result<Option<SshIdentity>> {
         .prompt()
         .context("username prompt cancelled")?;
     let username = username.trim().to_string();
+    if username.is_empty() {
+        anyhow::bail!("GitHub username must not be empty");
+    }
 
     let key = inquire::Text::new("Path to SSH private key (e.g. ~/.ssh/id_ed25519_personal):")
         .prompt()
         .context("key path prompt cancelled")?;
     let key = key.trim().to_string();
+
+    // Validate before any interpolation into ~/.ssh/config.
+    validate_host_entry_fields(&alias, &key)?;
 
     let ssh_cfg_path =
         ssh_config_path().ok_or_else(|| anyhow::anyhow!("could not resolve home directory"))?;
@@ -243,11 +351,16 @@ fn run_one_ssh_identity() -> Result<Option<SshIdentity>> {
             "  (already configured) Host '{alias}' found in {}",
             ssh_cfg_path.display()
         );
-        return Ok(Some(SshIdentity {
-            alias,
-            username,
-            key,
-        }));
+        // The ssh config for this alias is left untouched, so the identity
+        // store must not be clobbered with the newly-entered key either.
+        return Ok(Some(resolve_existing_identity(
+            existing_identities,
+            SshIdentity {
+                alias,
+                username,
+                key,
+            },
+        )));
     }
 
     // Write to ~/.ssh/config
@@ -256,7 +369,7 @@ fn run_one_ssh_identity() -> Result<Option<SshIdentity>> {
             .with_context(|| format!("creating directory {}", parent.display()))?;
     }
 
-    let updated = append_ssh_host(&existing_ssh_cfg, &alias, &key);
+    let updated = append_ssh_host(&existing_ssh_cfg, &alias, &key)?;
     std::fs::write(&ssh_cfg_path, &updated)
         .with_context(|| format!("writing {}", ssh_cfg_path.display()))?;
 
@@ -294,7 +407,7 @@ fn run_ssh_step(dry_run: bool) -> Result<()> {
         return Ok(());
     }
 
-    let count_str = inquire::Text::new("How many git identities do you have?")
+    let count_str = inquire::Text::new("How many SSH identities do you have?")
         .with_default("1")
         .prompt()
         .context("count prompt cancelled")?;
@@ -316,7 +429,7 @@ fn run_ssh_step(dry_run: bool) -> Result<()> {
 
     for i in 1..=count {
         println!("\n  Identity {i}/{count}:");
-        if let Some(identity) = run_one_ssh_identity()? {
+        if let Some(identity) = run_one_ssh_identity(&id_file)? {
             // Upsert into the neon identity store (keyed by alias)
             if let Some(existing) = id_file
                 .identity
@@ -384,7 +497,8 @@ fn run_docker_step(dry_run: bool) -> Result<()> {
 // =============================================================================
 
 pub fn run(args: &SecretsArgs) -> Result<()> {
-    warn_unknown_steps(&args.steps);
+    let steps = normalize_steps(&args.steps);
+    warn_unknown_steps(&steps);
 
     println!("=== neon setup secrets ===");
     println!("Configuring machine credentials (NPM token, SSH identities, Docker login).");
@@ -392,15 +506,15 @@ pub fn run(args: &SecretsArgs) -> Result<()> {
         println!("[dry-run mode — no changes will be made]");
     }
 
-    if should_run("npm", &args.steps) {
+    if should_run("npm", &steps) {
         run_npm_step(args.dry_run)?;
     }
 
-    if should_run("ssh", &args.steps) {
+    if should_run("ssh", &steps) {
         run_ssh_step(args.dry_run)?;
     }
 
-    if should_run("docker", &args.steps) {
+    if should_run("docker", &steps) {
         run_docker_step(args.dry_run)?;
     }
 
@@ -440,6 +554,18 @@ mod tests {
         assert!(!should_run("ssh", &steps));
     }
 
+    // --- normalize_steps ---
+
+    #[test]
+    fn normalize_steps_trims_and_drops_empty() {
+        // `--steps "npm, ssh"` (clap's comma split leaves " ssh") must still
+        // match the "ssh" step, and a trailing empty segment must not linger.
+        let steps = vec!["npm".to_string(), " ssh".to_string(), "".to_string()];
+        let normalized = normalize_steps(&steps);
+        assert_eq!(normalized, vec!["npm".to_string(), "ssh".to_string()]);
+        assert!(should_run("ssh", &normalized));
+    }
+
     // --- npmrc_has_token ---
 
     #[test]
@@ -459,11 +585,21 @@ mod tests {
         assert!(!npmrc_has_token(""));
     }
 
+    #[test]
+    fn npmrc_has_token_false_for_blank_value() {
+        // A bare `key=` (or whitespace-only value) must not count as configured.
+        let content = "//registry.npmjs.org/:_authToken=\nother=value\n";
+        assert!(!npmrc_has_token(content));
+
+        let content_ws = "//registry.npmjs.org/:_authToken=   \n";
+        assert!(!npmrc_has_token(content_ws));
+    }
+
     // --- format_host_entry ---
 
     #[test]
     fn format_host_entry_contains_alias() {
-        let entry = format_host_entry("github-personal", "~/.ssh/id_ed25519_personal");
+        let entry = format_host_entry("github-personal", "~/.ssh/id_ed25519_personal").unwrap();
         assert!(entry.contains("Host github-personal"));
         assert!(entry.contains("HostName github.com"));
         assert!(entry.contains("User git"));
@@ -472,8 +608,27 @@ mod tests {
 
     #[test]
     fn format_host_entry_ends_with_newline() {
-        let entry = format_host_entry("github-work", "~/.ssh/id_ed25519_work");
+        let entry = format_host_entry("github-work", "~/.ssh/id_ed25519_work").unwrap();
         assert!(entry.ends_with('\n'));
+    }
+
+    #[test]
+    fn format_host_entry_rejects_empty_key() {
+        assert!(format_host_entry("github-personal", "").is_err());
+    }
+
+    #[test]
+    fn format_host_entry_rejects_crlf_injection() {
+        // Embedded CR/LF in alias or key must not be interpolated verbatim —
+        // that would let attacker-controlled input smuggle extra config lines.
+        assert!(format_host_entry("github-personal\nHost evil", "~/.ssh/id_ed25519").is_err());
+        assert!(format_host_entry("github-personal", "~/.ssh/id\nHostName evil.com").is_err());
+        assert!(format_host_entry("github-personal\r\nHost evil", "~/.ssh/id_ed25519").is_err());
+    }
+
+    #[test]
+    fn format_host_entry_rejects_whitespace_in_alias() {
+        assert!(format_host_entry("github personal", "~/.ssh/id_ed25519").is_err());
     }
 
     // --- ssh_config_has_host ---
@@ -501,11 +656,28 @@ mod tests {
         assert!(!ssh_config_has_host("", "github-personal"));
     }
 
+    #[test]
+    fn ssh_config_has_host_detects_multi_alias_line() {
+        let content = "Host github-personal github-alt\n    HostName github.com\n";
+        assert!(ssh_config_has_host(content, "github-personal"));
+        assert!(ssh_config_has_host(content, "github-alt"));
+        assert!(!ssh_config_has_host(content, "github-other"));
+    }
+
+    #[test]
+    fn ssh_config_has_host_detects_inline_comment() {
+        let content = "Host github-personal # personal account\n    HostName github.com\n";
+        assert!(ssh_config_has_host(content, "github-personal"));
+        // The comment text itself must not match as an alias.
+        assert!(!ssh_config_has_host(content, "personal"));
+        assert!(!ssh_config_has_host(content, "account"));
+    }
+
     // --- append_ssh_host ---
 
     #[test]
     fn append_ssh_host_to_empty_content() {
-        let result = append_ssh_host("", "github-personal", "~/.ssh/id_ed25519");
+        let result = append_ssh_host("", "github-personal", "~/.ssh/id_ed25519").unwrap();
         assert!(result.starts_with("Host github-personal"));
         assert!(!result.starts_with('\n'));
     }
@@ -513,7 +685,8 @@ mod tests {
     #[test]
     fn append_ssh_host_adds_blank_separator() {
         let existing = "Host github-work\n    HostName github.com\n    User git\n    IdentityFile ~/.ssh/id_ed25519_work\n";
-        let result = append_ssh_host(existing, "github-personal", "~/.ssh/id_ed25519_personal");
+        let result =
+            append_ssh_host(existing, "github-personal", "~/.ssh/id_ed25519_personal").unwrap();
         // There should be a blank line between the two blocks
         assert!(result.contains("\n\nHost github-personal"));
     }
@@ -521,9 +694,59 @@ mod tests {
     #[test]
     fn append_ssh_host_both_blocks_present() {
         let existing = "Host github-work\n    HostName github.com\n    User git\n    IdentityFile ~/.ssh/id_ed25519_work\n";
-        let result = append_ssh_host(existing, "github-personal", "~/.ssh/key");
+        let result = append_ssh_host(existing, "github-personal", "~/.ssh/key").unwrap();
         assert!(result.contains("Host github-work"));
         assert!(result.contains("Host github-personal"));
+    }
+
+    #[test]
+    fn append_ssh_host_rejects_crlf_injection() {
+        let existing = "";
+        assert!(append_ssh_host(existing, "alias\nHost evil", "~/.ssh/key").is_err());
+    }
+
+    // --- resolve_existing_identity ---
+
+    #[test]
+    fn resolve_existing_identity_preserves_prior_entry() {
+        // Regression: when the alias is already configured in ~/.ssh/config,
+        // the identity store must keep the pre-existing key rather than
+        // silently swap in whatever the user just typed — otherwise the two
+        // files would end up describing different keys for the same alias.
+        let existing_identities = SshIdentityFile {
+            identity: vec![SshIdentity {
+                alias: "github-personal".to_string(),
+                username: "old-user".to_string(),
+                key: "~/.ssh/id_ed25519_original".to_string(),
+            }],
+        };
+        let freshly_entered = SshIdentity {
+            alias: "github-personal".to_string(),
+            username: "new-user".to_string(),
+            key: "~/.ssh/id_ed25519_new".to_string(),
+        };
+
+        let resolved = resolve_existing_identity(&existing_identities, freshly_entered);
+
+        assert_eq!(resolved.username, "old-user");
+        assert_eq!(resolved.key, "~/.ssh/id_ed25519_original");
+    }
+
+    #[test]
+    fn resolve_existing_identity_falls_back_when_no_prior_entry() {
+        // ~/.ssh/config already had this Host (e.g. hand-edited before neon
+        // existed) but the identity store has never recorded it — nothing to
+        // preserve, so the freshly-entered identity is used as-is.
+        let existing_identities = SshIdentityFile::default();
+        let freshly_entered = SshIdentity {
+            alias: "github-personal".to_string(),
+            username: "new-user".to_string(),
+            key: "~/.ssh/id_ed25519_new".to_string(),
+        };
+
+        let resolved = resolve_existing_identity(&existing_identities, freshly_entered.clone());
+
+        assert_eq!(resolved, freshly_entered);
     }
 
     // --- SshIdentity TOML round-trip ---
