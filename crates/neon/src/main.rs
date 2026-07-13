@@ -7,7 +7,7 @@ use neon_cli::repo::{self, InitArgs};
 use neon_cli::setup::{
     self, CustomizeTerminalArgs, DiagnosticsArgs, DockerLoginArgs, DockerLogoutArgs,
     DockerShowArgs, GitIdentityArgs, InstallLanguagesArgs, InstallPackagesArgs, NpmTokenArgs,
-    PickShellArgs, PickTerminalArgs, SetupClaudeArgs,
+    PickShellArgs, PickTerminalArgs, SetupClaudeArgs, SetupInteractiveArgs, SetupRunArgs,
 };
 
 /// NeonOS CLI — developer environment diagnostics and tooling
@@ -74,6 +74,10 @@ enum SetupCommands {
     InstallPackages(InstallPackagesArgs),
     /// Apply a YAML color theme to Windows Terminal
     CustomizeTerminal(CustomizeTerminalArgs),
+    /// Run the full configured setup pipeline non-interactively
+    Run(SetupRunArgs),
+    /// Launch the interactive setup wizard
+    Interactive(SetupInteractiveArgs),
 }
 
 fn main() -> Result<()> {
@@ -99,6 +103,8 @@ fn main() -> Result<()> {
             SetupCommands::PickTerminal(args) => setup::run_pick_terminal(args)?,
             SetupCommands::InstallPackages(args) => setup::run_install_packages(&args)?,
             SetupCommands::CustomizeTerminal(args) => setup::run_customize_terminal(&args)?,
+            SetupCommands::Run(args) => setup::run_setup_run(args)?,
+            SetupCommands::Interactive(args) => setup::run_setup_interactive(args)?,
         },
     }
 

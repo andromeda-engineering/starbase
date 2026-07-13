@@ -851,6 +851,10 @@ pub struct PickTerminalArgs {
 struct SetupConfig {
     shell: Option<ShellSection>,
     terminal: Option<TerminalSection>,
+    languages: Option<LanguagesSection>,
+    packages: Option<PackagesSection>,
+    terminal_theme: Option<TerminalThemeSection>,
+    claude: Option<ClaudeSection>,
     /// Unknown top-level tables/keys preserved across read-modify-write cycles.
     #[serde(flatten, default)]
     extra: HashMap<String, toml::Value>,
@@ -864,6 +868,55 @@ struct ShellSection {
 #[derive(Debug, Serialize, Deserialize)]
 struct TerminalSection {
     preferred: String,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+/// Which language runtimes to install.  Defaults: node/python/rust = true, go = false.
+#[derive(Debug, Serialize, Deserialize)]
+struct LanguagesSection {
+    #[serde(default = "default_true")]
+    node: bool,
+    #[serde(default = "default_true")]
+    python: bool,
+    #[serde(default = "default_true")]
+    rust: bool,
+    #[serde(default)]
+    go: bool,
+}
+
+impl Default for LanguagesSection {
+    fn default() -> Self {
+        LanguagesSection {
+            node: true,
+            python: true,
+            rust: true,
+            go: false,
+        }
+    }
+}
+
+/// Shell-experience packages to skip (empty = install all defaults).
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct PackagesSection {
+    #[serde(default)]
+    skip: Vec<String>,
+}
+
+/// Terminal theme configuration.
+#[derive(Debug, Serialize, Deserialize)]
+struct TerminalThemeSection {
+    /// Path to the YAML theme file; `~` is expanded at runtime.
+    path: String,
+}
+
+/// Claude/agent environment bootstrap configuration.
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct ClaudeSection {
+    /// Optional path to the claude-config repo clone.
+    claude_config_path: Option<String>,
 }
 
 // --- Config path ---
@@ -1030,6 +1083,462 @@ pub fn run_pick_terminal(args: PickTerminalArgs) -> Result<()> {
     let (updated, _canonical) = apply_terminal_choice(cfg, choice);
     save_config(&path, &updated)?;
     println!("\u{2713} Terminal set to {}", choice.display_name());
+    Ok(())
+}
+
+// ============================================================
+// SECTION 4 — neon setup run + neon setup interactive
+// ============================================================
+
+// --- Tilde expansion ---
+
+/// Expand a leading `~/` or `~\` to the current home directory.
+fn expand_tilde_path(path: &str) -> Result<PathBuf> {
+    if let Some(rest) = path.strip_prefix("~/").or_else(|| path.strip_prefix("~\\")) {
+        let home = home_dir()?;
+        Ok(home.join(rest))
+    } else {
+        Ok(PathBuf::from(path))
+    }
+}
+
+// --- Step names ---
+
+/// Canonical step names used in `--steps` filter and log output.
+const STEP_NAMES: &[&str] = &[
+    "detect",
+    "pick-shell",
+    "pick-terminal",
+    "customize-terminal",
+    "install-languages",
+    "install-apps",
+    "install-packages",
+    "claude",
+    "diagnostics",
+];
+
+/// Returns `true` when `filter` is empty (run all) or contains `step`.
+fn step_enabled(filter: &[String], step: &str) -> bool {
+    filter.is_empty() || filter.iter().any(|s| s == step)
+}
+
+/// Validates that every entry in `filter` is a recognized step name.
+///
+/// An empty filter (run all steps) is always valid. Unknown entries are
+/// reported together with the list of valid names so a typo in `--steps`
+/// fails fast instead of silently being ignored.
+fn validate_steps_filter(filter: &[String]) -> Result<()> {
+    let unknown: Vec<&String> = filter
+        .iter()
+        .filter(|s| !STEP_NAMES.contains(&s.as_str()))
+        .collect();
+    if !unknown.is_empty() {
+        let unknown_list = unknown
+            .iter()
+            .map(|s| s.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        anyhow::bail!(
+            "unknown step(s) in --steps: {unknown_list}\nvalid steps: {}",
+            STEP_NAMES.join(", ")
+        );
+    }
+    Ok(())
+}
+
+// --- Args ---
+
+/// Arguments for `neon setup run`.
+#[derive(clap::Args, Debug)]
+pub struct SetupRunArgs {
+    /// Only run specific steps (comma-separated).
+    /// Valid names: detect, pick-shell, pick-terminal, customize-terminal,
+    /// install-languages, install-apps, install-packages, claude, diagnostics
+    #[arg(long, value_delimiter = ',')]
+    pub steps: Vec<String>,
+
+    /// Print what would happen without making changes.
+    #[arg(long)]
+    pub dry_run: bool,
+}
+
+/// Arguments for `neon setup interactive`.
+#[derive(clap::Args, Debug)]
+pub struct SetupInteractiveArgs {
+    /// Print what would happen without making changes.
+    #[arg(long)]
+    pub dry_run: bool,
+}
+
+// --- run_setup_run ---
+
+/// Entry point for `neon setup run`.
+///
+/// Loads `~/.config/neon/setup.toml` and replays each configured step in
+/// pipeline order without interactive prompts.  Steps that have no config
+/// section yet are skipped with a note.
+pub fn run_setup_run(args: SetupRunArgs) -> Result<()> {
+    validate_steps_filter(&args.steps)?;
+
+    let path = config_path()?;
+    let cfg = load_config(&path)?;
+    let filter = &args.steps;
+    let dry_run = args.dry_run;
+
+    println!("neon setup run{}", if dry_run { " (dry-run)" } else { "" });
+    println!();
+
+    let mut any_failed = false;
+
+    // 1. detect
+    if step_enabled(filter, "detect") {
+        println!("--- detect ---");
+        if dry_run {
+            println!("  [dry-run] would run: neon setup detect");
+        } else if let Err(e) = run_detect() {
+            eprintln!("  error: {e}");
+            any_failed = true;
+        }
+        println!();
+    }
+
+    // 2. pick-shell
+    if step_enabled(filter, "pick-shell") {
+        println!("--- pick-shell ---");
+        match &cfg.shell {
+            None => println!("  (skipped: [shell] not configured in setup.toml)"),
+            Some(s) => {
+                let shell_str = s.preferred.clone();
+                if dry_run {
+                    println!("  [dry-run] would set shell to: {shell_str}");
+                } else {
+                    // Parse the stored string back to a ShellChoice enum value.
+                    use clap::ValueEnum;
+                    match ShellChoice::from_str(&shell_str, true) {
+                        Ok(choice) => {
+                            let result = run_pick_shell(PickShellArgs {
+                                shell: Some(choice),
+                                dry_run: false,
+                            });
+                            if let Err(e) = result {
+                                eprintln!("  error: {e}");
+                                any_failed = true;
+                            }
+                        }
+                        Err(_) => {
+                            eprintln!("  error: unknown shell value '{shell_str}' in setup.toml");
+                            any_failed = true;
+                        }
+                    }
+                }
+            }
+        }
+        println!();
+    }
+
+    // 3. pick-terminal
+    if step_enabled(filter, "pick-terminal") {
+        println!("--- pick-terminal ---");
+        match &cfg.terminal {
+            None => println!("  (skipped: [terminal] not configured in setup.toml)"),
+            Some(t) => {
+                let term_str = t.preferred.clone();
+                if dry_run {
+                    println!("  [dry-run] would set terminal to: {term_str}");
+                } else {
+                    use clap::ValueEnum;
+                    match TerminalChoice::from_str(&term_str, true) {
+                        Ok(choice) => {
+                            let result = run_pick_terminal(PickTerminalArgs {
+                                terminal: Some(choice),
+                                dry_run: false,
+                            });
+                            if let Err(e) = result {
+                                eprintln!("  error: {e}");
+                                any_failed = true;
+                            }
+                        }
+                        Err(_) => {
+                            eprintln!("  error: unknown terminal value '{term_str}' in setup.toml");
+                            any_failed = true;
+                        }
+                    }
+                }
+            }
+        }
+        println!();
+    }
+
+    // 4. customize-terminal
+    if step_enabled(filter, "customize-terminal") {
+        println!("--- customize-terminal ---");
+        match &cfg.terminal_theme {
+            None => println!("  (skipped: [terminal_theme] not configured in setup.toml)"),
+            Some(tt) => {
+                let theme_path = expand_tilde_path(&tt.path)?;
+                if dry_run {
+                    println!(
+                        "  [dry-run] would apply theme from: {}",
+                        theme_path.display()
+                    );
+                } else {
+                    let result = terminal_theme::run_customize_terminal(&CustomizeTerminalArgs {
+                        theme_file: Some(theme_path),
+                        profile: "defaults".to_string(),
+                        dry_run: false,
+                    });
+                    if let Err(e) = result {
+                        eprintln!("  error: {e}");
+                        any_failed = true;
+                    }
+                }
+            }
+        }
+        println!();
+    }
+
+    // 5. install-languages
+    if step_enabled(filter, "install-languages") {
+        println!("--- install-languages ---");
+        match &cfg.languages {
+            None => println!("  (skipped: [languages] not configured in setup.toml)"),
+            Some(lang) => {
+                let mut skip: Vec<String> = Vec::new();
+                if !lang.node {
+                    skip.push("node".to_string());
+                }
+                if !lang.python {
+                    skip.push("python".to_string());
+                }
+                if !lang.rust {
+                    skip.push("rust".to_string());
+                }
+                if !lang.go {
+                    skip.push("go".to_string());
+                }
+                let result = run_install_languages(&InstallLanguagesArgs { dry_run, skip });
+                if let Err(e) = result {
+                    eprintln!("  error: {e}");
+                    any_failed = true;
+                }
+            }
+        }
+        println!();
+    }
+
+    // 6. install-apps (no config section — run with all defaults when step is requested)
+    if step_enabled(filter, "install-apps") {
+        println!("--- install-apps ---");
+        if dry_run {
+            println!("  [dry-run] would run: neon setup install-apps --yes");
+        } else {
+            let result = crate::install::run_install_apps(crate::install::InstallAppsArgs {
+                tools: None,
+                dry_run: false,
+                yes: true,
+            });
+            if let Err(e) = result {
+                eprintln!("  error: {e}");
+                any_failed = true;
+            }
+        }
+        println!();
+    }
+
+    // 7. install-packages
+    if step_enabled(filter, "install-packages") {
+        println!("--- install-packages ---");
+        match &cfg.packages {
+            None => println!("  (skipped: [packages] not configured in setup.toml)"),
+            Some(pkgs) => {
+                let result = run_install_packages(&InstallPackagesArgs {
+                    dry_run,
+                    skip: pkgs.skip.clone(),
+                });
+                if let Err(e) = result {
+                    eprintln!("  error: {e}");
+                    any_failed = true;
+                }
+            }
+        }
+        println!();
+    }
+
+    // 8. claude
+    if step_enabled(filter, "claude") {
+        println!("--- claude ---");
+        match &cfg.claude {
+            None => println!("  (skipped: [claude] not configured in setup.toml)"),
+            Some(c) => {
+                let claude_config_path = c
+                    .claude_config_path
+                    .as_deref()
+                    .map(expand_tilde_path)
+                    .transpose()?;
+                let result = run_claude(SetupClaudeArgs {
+                    claude_config: claude_config_path,
+                    dry_run,
+                });
+                if let Err(e) = result {
+                    eprintln!("  error: {e}");
+                    any_failed = true;
+                }
+            }
+        }
+        println!();
+    }
+
+    // 9. diagnostics
+    if step_enabled(filter, "diagnostics") {
+        println!("--- diagnostics ---");
+        if dry_run {
+            println!("  [dry-run] would run: neon setup diagnostics");
+        } else if let Err(e) = run_diagnostics(&DiagnosticsArgs {}) {
+            eprintln!("  error: {e}");
+            any_failed = true;
+        }
+        println!();
+    }
+
+    if any_failed {
+        anyhow::bail!("one or more setup steps failed");
+    }
+
+    println!("Setup complete.");
+    Ok(())
+}
+
+// --- run_setup_interactive ---
+
+/// Entry point for `neon setup interactive`.
+///
+/// Presents an `inquire::MultiSelect` step picker, then calls each selected
+/// step's existing interactive runner in pipeline order.
+pub fn run_setup_interactive(args: SetupInteractiveArgs) -> Result<()> {
+    let dry_run = args.dry_run;
+
+    println!(
+        "neon setup interactive{}",
+        if dry_run { " (dry-run)" } else { "" }
+    );
+    println!();
+
+    let selected_names =
+        inquire::MultiSelect::new("Select setup steps to run:", STEP_NAMES.to_vec())
+            .with_help_message("Space to toggle, Enter to confirm, Ctrl-C to abort")
+            .prompt()?;
+
+    if selected_names.is_empty() {
+        println!("No steps selected — nothing to do.");
+        return Ok(());
+    }
+
+    println!();
+
+    let mut any_failed = false;
+    let mut step_results: Vec<(&&str, bool)> = Vec::with_capacity(selected_names.len());
+
+    for step in &selected_names {
+        println!("--- {step} ---");
+        let result = run_interactive_step(step, dry_run);
+        let succeeded = result.is_ok();
+        if let Err(e) = result {
+            eprintln!("  error in {step}: {e}");
+            any_failed = true;
+        }
+        step_results.push((step, succeeded));
+        println!();
+    }
+
+    println!("Summary:");
+    for (step, succeeded) in &step_results {
+        if *succeeded {
+            println!("  \u{2713} {step}");
+        } else {
+            println!("  \u{2717} {step} (failed)");
+        }
+    }
+
+    if any_failed {
+        anyhow::bail!("one or more interactive setup steps failed");
+    }
+
+    Ok(())
+}
+
+/// Dispatch one step by name for `run_setup_interactive`.
+fn run_interactive_step(step: &str, dry_run: bool) -> Result<()> {
+    match step {
+        "detect" => {
+            if dry_run {
+                println!("  [dry-run] would run: neon setup detect");
+            } else {
+                run_detect()?;
+            }
+        }
+        "pick-shell" => {
+            run_pick_shell(PickShellArgs {
+                shell: None,
+                dry_run,
+            })?;
+        }
+        "pick-terminal" => {
+            run_pick_terminal(PickTerminalArgs {
+                terminal: None,
+                dry_run,
+            })?;
+        }
+        "customize-terminal" => {
+            terminal_theme::run_customize_terminal(&CustomizeTerminalArgs {
+                theme_file: None,
+                profile: "defaults".to_string(),
+                dry_run,
+            })?;
+        }
+        "install-languages" => {
+            run_install_languages(&InstallLanguagesArgs {
+                dry_run,
+                skip: vec![],
+            })?;
+        }
+        "install-apps" => {
+            if dry_run {
+                crate::install::run_install_apps(crate::install::InstallAppsArgs {
+                    tools: None,
+                    dry_run: true,
+                    yes: true,
+                })?;
+            } else {
+                crate::install::run_install_apps(crate::install::InstallAppsArgs {
+                    tools: None,
+                    dry_run: false,
+                    yes: false,
+                })?;
+            }
+        }
+        "install-packages" => {
+            run_install_packages(&InstallPackagesArgs {
+                dry_run,
+                skip: vec![],
+            })?;
+        }
+        "claude" => {
+            run_claude(SetupClaudeArgs {
+                claude_config: None,
+                dry_run,
+            })?;
+        }
+        "diagnostics" => {
+            if dry_run {
+                println!("  [dry-run] would run: neon setup diagnostics");
+            } else {
+                run_diagnostics(&DiagnosticsArgs {})?;
+            }
+        }
+        other => {
+            anyhow::bail!("unknown step: {other}");
+        }
+    }
     Ok(())
 }
 
@@ -1294,6 +1803,7 @@ mod tests {
                 preferred: "windows-terminal".to_string(),
             }),
             extra: HashMap::new(),
+            ..Default::default()
         };
         let serialized = toml::to_string_pretty(&cfg).expect("serialize");
         let deserialized: SetupConfig = toml::from_str(&serialized).expect("deserialize");
@@ -1374,6 +1884,7 @@ mod tests {
             }),
             terminal: None,
             extra: HashMap::new(),
+            ..Default::default()
         };
         save_config(&path, &c1).expect("first write");
         assert!(path.exists(), "config file should exist after first write");
@@ -1385,6 +1896,7 @@ mod tests {
             }),
             terminal: None,
             extra: HashMap::new(),
+            ..Default::default()
         };
         save_config(&path, &c2).expect("second write (rename over existing)");
 
@@ -1396,5 +1908,183 @@ mod tests {
         assert!(!tmp.exists(), "tmp file must not be left behind");
 
         std::fs::remove_dir_all(dir).ok();
+    }
+
+    // --- orchestrator tests ---
+
+    #[test]
+    fn step_enabled_empty_filter_runs_all() {
+        assert!(step_enabled(&[], "detect"));
+        assert!(step_enabled(&[], "install-languages"));
+        assert!(step_enabled(&[], "diagnostics"));
+    }
+
+    #[test]
+    fn step_enabled_filter_includes_named_step() {
+        let filter = vec!["detect".to_string(), "claude".to_string()];
+        assert!(step_enabled(&filter, "detect"));
+        assert!(step_enabled(&filter, "claude"));
+        assert!(!step_enabled(&filter, "install-languages"));
+        assert!(!step_enabled(&filter, "diagnostics"));
+    }
+
+    #[test]
+    fn validate_steps_filter_accepts_empty_and_known_steps() {
+        assert!(validate_steps_filter(&[]).is_ok());
+        let filter = vec!["detect".to_string(), "claude".to_string()];
+        assert!(validate_steps_filter(&filter).is_ok());
+    }
+
+    #[test]
+    fn validate_steps_filter_rejects_unknown_step() {
+        let filter = vec!["detect".to_string(), "pick-shel".to_string()];
+        let err = validate_steps_filter(&filter).expect_err("unknown step should error");
+        let msg = err.to_string();
+        assert!(
+            msg.contains("pick-shel"),
+            "error should name the unknown step: {msg}"
+        );
+        assert!(
+            msg.contains("detect"),
+            "error should list valid step names: {msg}"
+        );
+    }
+
+    #[test]
+    fn languages_section_defaults_are_correct() {
+        let lang = LanguagesSection::default();
+        assert!(lang.node, "node should default to true");
+        assert!(lang.python, "python should default to true");
+        assert!(lang.rust, "rust should default to true");
+        assert!(!lang.go, "go should default to false");
+    }
+
+    #[test]
+    fn languages_section_toml_defaults_via_serde() {
+        // When go is absent, it defaults to false; when others are absent, they default to true.
+        let toml_str = "[languages]\n";
+        let cfg: SetupConfig = toml::from_str(toml_str).expect("deserialize");
+        let lang = cfg
+            .languages
+            .as_ref()
+            .expect("[languages] should deserialize");
+        assert!(lang.node, "node should default to true when absent");
+        assert!(lang.python, "python should default to true when absent");
+        assert!(lang.rust, "rust should default to true when absent");
+        assert!(!lang.go, "go should default to false when absent");
+    }
+
+    #[test]
+    fn config_roundtrip_with_new_sections() {
+        let cfg = SetupConfig {
+            shell: Some(ShellSection {
+                preferred: "powershell7".to_string(),
+            }),
+            terminal: Some(TerminalSection {
+                preferred: "windows-terminal".to_string(),
+            }),
+            languages: Some(LanguagesSection {
+                node: true,
+                python: true,
+                rust: true,
+                go: false,
+            }),
+            packages: Some(PackagesSection {
+                skip: vec!["oh-my-zsh".to_string()],
+            }),
+            terminal_theme: Some(TerminalThemeSection {
+                path: "~/.config/neon/themes/synthwave84.yml".to_string(),
+            }),
+            claude: Some(ClaudeSection {
+                claude_config_path: Some("~/claude-config".to_string()),
+            }),
+            extra: HashMap::new(),
+        };
+        let serialized = toml::to_string_pretty(&cfg).expect("serialize");
+        let deserialized: SetupConfig = toml::from_str(&serialized).expect("deserialize");
+
+        assert_eq!(
+            deserialized.shell.as_ref().unwrap().preferred,
+            "powershell7"
+        );
+        assert_eq!(
+            deserialized.terminal.as_ref().unwrap().preferred,
+            "windows-terminal"
+        );
+        let lang = deserialized.languages.as_ref().unwrap();
+        assert!(lang.node);
+        assert!(!lang.go);
+        let pkgs = deserialized.packages.as_ref().unwrap();
+        assert_eq!(pkgs.skip, vec!["oh-my-zsh"]);
+        let tt = deserialized.terminal_theme.as_ref().unwrap();
+        assert_eq!(tt.path, "~/.config/neon/themes/synthwave84.yml");
+        let cl = deserialized.claude.as_ref().unwrap();
+        assert_eq!(cl.claude_config_path.as_deref(), Some("~/claude-config"));
+    }
+
+    #[test]
+    fn step_names_contains_all_pipeline_steps() {
+        let expected = [
+            "detect",
+            "pick-shell",
+            "pick-terminal",
+            "customize-terminal",
+            "install-languages",
+            "install-apps",
+            "install-packages",
+            "claude",
+            "diagnostics",
+        ];
+        for step in expected {
+            assert!(
+                STEP_NAMES.contains(&step),
+                "STEP_NAMES must contain '{step}'"
+            );
+        }
+    }
+
+    #[test]
+    fn expand_tilde_path_expands_home() {
+        let result = expand_tilde_path("~/foo/bar").expect("expand");
+        let home = home_dir().expect("home_dir");
+        assert_eq!(result, home.join("foo/bar"));
+    }
+
+    #[test]
+    fn expand_tilde_path_passthrough_absolute() {
+        let abs = "/usr/local/bin/neon";
+        let result = expand_tilde_path(abs).expect("expand");
+        assert_eq!(result.to_string_lossy(), abs);
+    }
+
+    #[test]
+    fn shell_choice_as_str_roundtrips_through_value_enum() {
+        use clap::ValueEnum;
+        for c in [
+            ShellChoice::Powershell7,
+            ShellChoice::Wsl,
+            ShellChoice::Zsh,
+            ShellChoice::Bash,
+        ] {
+            let stored = c.as_str();
+            let parsed = ShellChoice::from_str(stored, true)
+                .unwrap_or_else(|_| panic!("from_str failed for '{stored}'"));
+            assert_eq!(parsed, c, "round-trip failed for variant {c:?}");
+        }
+    }
+
+    #[test]
+    fn terminal_choice_as_str_roundtrips_through_value_enum() {
+        use clap::ValueEnum;
+        for c in [
+            TerminalChoice::WindowsTerminal,
+            TerminalChoice::Iterm2,
+            TerminalChoice::GnomeTerminal,
+        ] {
+            let stored = c.as_str();
+            let parsed = TerminalChoice::from_str(stored, true)
+                .unwrap_or_else(|_| panic!("from_str failed for '{stored}'"));
+            assert_eq!(parsed, c, "round-trip failed for variant {c:?}");
+        }
     }
 }
