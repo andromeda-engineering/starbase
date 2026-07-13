@@ -10,6 +10,7 @@ pub mod git_identity;
 pub mod languages;
 pub mod npm_token;
 pub mod packages;
+pub mod secrets;
 pub mod terminal_theme;
 
 use anyhow::{Context, Result};
@@ -29,6 +30,7 @@ pub use git_identity::{run as run_git_identity, GitIdentityArgs};
 pub use languages::{run as run_install_languages, InstallLanguagesArgs};
 pub use npm_token::{run as run_npm_token, NpmTokenArgs};
 pub use packages::{run as run_install_packages, InstallPackagesArgs};
+pub use secrets::{run as run_secrets, SecretsArgs};
 pub use terminal_theme::{run_customize_terminal, CustomizeTerminalArgs};
 
 // ============================================================
