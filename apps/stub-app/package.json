@@ -1,5 +1,5 @@
 {
-  "name": "@neonwave/neonos-stub-app",
+  "name": "@andromeda-eng/starbase-stub-app",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,6 +10,6 @@
     "test": "echo \"No app tests yet\""
   },
   "dependencies": {
-    "@neonwave/neonos-stub-package": "workspace:*"
+    "@andromeda-eng/starbase-stub-package": "workspace:*"
   }
 }

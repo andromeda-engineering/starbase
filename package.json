@@ -1,12 +1,12 @@
 {
-  "name": "@neonwave/neonos-monorepo",
+  "name": "@andromeda-eng/starbase-monorepo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "NeonOS — an open-source AI-native developer environment for repo setup, agent configuration, local memory, and repeatable coding workflows.",
+  "description": "Starbase — an open-source AI-native developer environment for repo setup, agent configuration, local memory, and repeatable coding workflows.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/neonwave-dev/neon-os.git"
+    "url": "git+https://github.com/andromeda-engineering/starbase.git"
   },
   "license": "MIT",
   "packageManager": "pnpm@9.15.0",
