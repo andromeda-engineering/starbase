@@ -1,7 +1,7 @@
-//! Stub crate for the initial NeonOS repository setup.
+//! Stub crate for the initial Starbase repository setup.
 
 pub fn stub_message() -> &'static str {
-    "NeonOS stub crate is wired."
+    "Starbase stub crate is wired."
 }
 
 #[cfg(test)]
@@ -10,6 +10,6 @@ mod tests {
 
     #[test]
     fn returns_stub_message() {
-        assert_eq!(stub_message(), "NeonOS stub crate is wired.");
+        assert_eq!(stub_message(), "Starbase stub crate is wired.");
     }
 }

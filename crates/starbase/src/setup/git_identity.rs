@@ -1,4 +1,4 @@
-/// `neon setup git-identity` — manage git identity (name, email) in local or global scope.
+/// `starbase setup git-identity` — manage git identity (name, email) in local or global scope.
 ///
 /// Stored identities live in `~/.config/git/identities` as TOML.
 /// Format: one [[identity]] table per entry, keyed by email.
@@ -236,7 +236,7 @@ mod tests {
     use std::fs;
 
     fn temp_path(name: &str) -> PathBuf {
-        env::temp_dir().join(format!("neon-test-{}-{}", std::process::id(), name))
+        env::temp_dir().join(format!("starbase-test-{}-{}", std::process::id(), name))
     }
 
     #[test]

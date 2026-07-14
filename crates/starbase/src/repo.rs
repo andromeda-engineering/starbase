@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 /// Repository topology: single-maintainer vs multi-person team.
 ///
-/// Affects GitHub branch-protection settings applied by `neon repo harden`
+/// Affects GitHub branch-protection settings applied by `starbase repo harden`
 /// (solo → admin bypass; team → strict approvals).
 #[derive(ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Topology {
@@ -64,7 +64,7 @@ pub enum Languages {
     Ts,
     /// Rust only — no pnpm/Turborepo, no TypeScript CI.
     Rust,
-    /// Both TypeScript and Rust (the canonical NeonOS profile).
+    /// Both TypeScript and Rust (the canonical Starbase profile).
     #[default]
     Both,
     /// Bare repo — community/docs/.github files only; no language workspace.
@@ -73,7 +73,7 @@ pub enum Languages {
 
 /// License for the repository.
 ///
-/// Controls which LICENSE file is emitted by `neon repo init`, or omits it
+/// Controls which LICENSE file is emitted by `starbase repo init`, or omits it
 /// entirely for proprietary repositories.
 #[derive(ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum License {
@@ -112,7 +112,7 @@ pub struct RepoProfile {
 
 // --- CLI args struct ---
 
-/// Arguments for `neon repo init`.
+/// Arguments for `starbase repo init`.
 #[derive(Args, Debug)]
 pub struct InitArgs {
     /// Target directory for the new repository (default: current directory).
@@ -178,7 +178,7 @@ impl PlanItem {
     }
 }
 
-/// Derive the list of files / artifacts that `neon repo init` *would* generate for
+/// Derive the list of files / artifacts that `starbase repo init` *would* generate for
 /// the given profile.  Pure function — no filesystem access, no I/O.
 pub fn plan(profile: &RepoProfile) -> Vec<PlanItem> {
     let license_label: Option<&str> = match profile.license {
@@ -278,7 +278,7 @@ pub fn format_plan(profile: &RepoProfile, path: Option<&PathBuf>) -> String {
         .map(|p| p.display().to_string())
         .unwrap_or_else(|| ".".to_string());
 
-    let _ = writeln!(s, "=== neon repo init — DRY RUN ===");
+    let _ = writeln!(s, "=== starbase repo init — DRY RUN ===");
     let _ = writeln!(s, "  target:     {target}");
     let _ = writeln!(s);
     let _ = writeln!(s, "=== Profile ===");
@@ -327,7 +327,7 @@ fn validate(profile: &RepoProfile) -> Result<()> {
 
 // --- Public entry point ---
 
-/// Entry point for `neon repo init`.
+/// Entry point for `starbase repo init`.
 ///
 /// Builds a `RepoProfile` from the parsed CLI arguments and prints a
 /// human-readable scaffold plan to stdout.  No files are written and no
@@ -528,7 +528,7 @@ mod tests {
     fn format_plan_contains_profile_summary_and_items() {
         let profile = RepoProfile::default();
         let output = format_plan(&profile, None);
-        assert!(output.contains("=== neon repo init"));
+        assert!(output.contains("=== starbase repo init"));
         assert!(output.contains("=== Profile ==="));
         assert!(output.contains("=== Would generate ==="));
         assert!(output.contains("would create:"));

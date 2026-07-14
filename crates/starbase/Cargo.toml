@@ -1,16 +1,16 @@
 [package]
-name = "neon-cli"
+name = "starbase-cli"
 version = "0.1.0"
 edition = "2021"
-description = "NeonOS CLI - developer environment diagnostics and tooling"
+description = "Starbase CLI - developer environment diagnostics and tooling"
 license = "MIT"
 
 [[bin]]
-name = "neon"
+name = "starbase"
 path = "src/main.rs"
 
 [lib]
-name = "neon_cli"
+name = "starbase_cli"
 path = "src/lib.rs"
 
 [dependencies]

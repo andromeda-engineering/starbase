@@ -1,4 +1,4 @@
-//! Reusable widget types for the `neon doctor` TUI panes.
+//! Reusable widget types for the `starbase doctor` TUI panes.
 //!
 //! Each pane implements [`ratatui::widgets::Widget`] so it can be used both
 //! by the live `tui_loop` and by the tui-pantry catalog.
@@ -162,7 +162,7 @@ pub mod pantry {
             "Default"
         }
         fn source(&self) -> &str {
-            "neon_cli::doctor::widgets::ToolingPane"
+            "starbase_cli::doctor::widgets::ToolingPane"
         }
         fn description(&self) -> &str {
             "All tracked tools present with representative version strings."
@@ -183,7 +183,7 @@ pub mod pantry {
             "Missing tools"
         }
         fn source(&self) -> &str {
-            "neon_cli::doctor::widgets::ToolingPane"
+            "starbase_cli::doctor::widgets::ToolingPane"
         }
         fn description(&self) -> &str {
             "Some tools report not-found, showing how missing entries render."
@@ -219,7 +219,7 @@ pub mod pantry {
             "Default"
         }
         fn source(&self) -> &str {
-            "neon_cli::doctor::widgets::GitIdentityPane"
+            "starbase_cli::doctor::widgets::GitIdentityPane"
         }
         fn description(&self) -> &str {
             "User name and email both configured."
@@ -240,7 +240,7 @@ pub mod pantry {
             "Unset"
         }
         fn source(&self) -> &str {
-            "neon_cli::doctor::widgets::GitIdentityPane"
+            "starbase_cli::doctor::widgets::GitIdentityPane"
         }
         fn description(&self) -> &str {
             "Both name and email unset, showing the (not set) fallback."
@@ -266,7 +266,7 @@ pub mod pantry {
             "Default"
         }
         fn source(&self) -> &str {
-            "neon_cli::doctor::widgets::RepoHealthPane"
+            "starbase_cli::doctor::widgets::RepoHealthPane"
         }
         fn description(&self) -> &str {
             "Branch, HEAD, and a small dirty-file count."
@@ -287,7 +287,7 @@ pub mod pantry {
             "Clean"
         }
         fn source(&self) -> &str {
-            "neon_cli::doctor::widgets::RepoHealthPane"
+            "starbase_cli::doctor::widgets::RepoHealthPane"
         }
         fn description(&self) -> &str {
             "Repo with zero dirty files, the clean-slate state."

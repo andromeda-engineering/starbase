@@ -1,4 +1,4 @@
-﻿/// `neon setup install-packages` — idempotent shell-experience package installer.
+﻿/// `starbase setup install-packages` — idempotent shell-experience package installer.
 ///
 /// Mirrors the structure of `crate::install` (InstallSpec/build_plan/execute_plan)
 /// but covers the full set of shell-experience tools across Windows, Linux, and macOS.
@@ -13,7 +13,7 @@ use crate::setup::on_path;
 // Package enum
 // ---------------------------------------------------------------------------
 
-/// A shell-experience package that `neon setup install-packages` can install.
+/// A shell-experience package that `starbase setup install-packages` can install.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Package {
     Zsh,
@@ -610,7 +610,7 @@ pub(crate) fn print_summary(results: &[(&Package, PkgResult)]) {
 // CLI args
 // ---------------------------------------------------------------------------
 
-/// Arguments for `neon setup install-packages`.
+/// Arguments for `starbase setup install-packages`.
 #[derive(Args, Debug)]
 pub struct InstallPackagesArgs {
     /// Print what would run without executing anything.
@@ -628,7 +628,7 @@ pub struct InstallPackagesArgs {
 // Public entry point
 // ---------------------------------------------------------------------------
 
-/// Entry point for `neon setup install-packages`.
+/// Entry point for `starbase setup install-packages`.
 pub fn run(args: &InstallPackagesArgs) -> Result<()> {
     let platform = current_platform();
 

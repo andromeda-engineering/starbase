@@ -1,10 +1,10 @@
-# Synthwave84 — default NeonOS terminal theme
+# Synthwave84 — default Starbase terminal theme
 #
 # Based on the Synthwave84 color scheme for Windows Terminal.
 # Appearance is written to profiles.defaults by default (pass --profile <name>
 # to target a specific profile).
 #
-# background_image_pool: neon picks one at random each run.
+# background_image_pool: starbase picks one at random each run.
 # Paths support ~ for the home directory.
 
 name: "Synthwave84"

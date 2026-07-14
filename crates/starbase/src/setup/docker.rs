@@ -1,4 +1,4 @@
-/// `neon setup docker-login` / `docker-logout` / `docker-show`
+/// `starbase setup docker-login` / `docker-logout` / `docker-show`
 ///
 /// - `docker-login`: invoke `docker login [--username <u>] <registry>`
 /// - `docker-logout`: invoke `docker logout <registry>`

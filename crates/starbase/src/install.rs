@@ -6,7 +6,7 @@ use crate::setup::on_path;
 
 // --- App enum ---
 
-/// A core app that `neon setup install-apps` can install.
+/// A core app that `starbase setup install-apps` can install.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum App {
     Git,
@@ -448,7 +448,7 @@ pub fn print_summary(results: &[(&App, AppResult)]) {
 
 // --- CLI args ---
 
-/// Arguments for `neon setup install-apps`.
+/// Arguments for `starbase setup install-apps`.
 #[derive(Args, Debug)]
 pub struct InstallAppsArgs {
     /// Comma-separated list of tools to install (default: all).
@@ -467,7 +467,7 @@ pub struct InstallAppsArgs {
 
 // --- Public entry point ---
 
-/// Entry point for `neon setup install-apps`.
+/// Entry point for `starbase setup install-apps`.
 pub fn run_install_apps(args: InstallAppsArgs) -> Result<()> {
     // Resolve the requested app list.
     let requested: Vec<App> = match &args.tools {

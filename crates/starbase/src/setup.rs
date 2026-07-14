@@ -1,4 +1,4 @@
-/// `neon setup` — machine setup and environment configuration.
+/// `starbase setup` — machine setup and environment configuration.
 ///
 /// This module is the root of the setup subcommand tree.  The `detect`
 /// subcommand lives here (alongside the shared detection helpers); the
@@ -34,7 +34,7 @@ pub use secrets::{run as run_secrets, SecretsArgs};
 pub use terminal_theme::{run_customize_terminal, CustomizeTerminalArgs};
 
 // ============================================================
-// SECTION 1 — detect machine capabilities (neon setup detect)
+// SECTION 1 — detect machine capabilities (starbase setup detect)
 // ============================================================
 
 // --- Data types ---
@@ -258,7 +258,7 @@ pub fn format_report(report: &CapabilityReport) -> String {
     use std::fmt::Write;
     let mut s = String::new();
 
-    let _ = writeln!(s, "=== neon setup detect ===");
+    let _ = writeln!(s, "=== starbase setup detect ===");
     let _ = writeln!(s);
     let _ = writeln!(s, "  OS:       {}", os_label(&report.os));
     let _ = writeln!(s, "  Arch:     {}", report.arch);
@@ -310,7 +310,7 @@ pub fn run_detect() -> Result<()> {
 }
 
 // ============================================================
-// SECTION 2 — Claude/agent bootstrap (neon setup claude)
+// SECTION 2 — Claude/agent bootstrap (starbase setup claude)
 // ============================================================
 
 // --- Constants ---
@@ -329,7 +329,7 @@ const LOCAL_CONFIG_TEMPLATE: &str = "\
 
 // --- Args ---
 
-/// Arguments for `neon setup claude`.
+/// Arguments for `starbase setup claude`.
 #[derive(clap::Args, Debug)]
 pub struct SetupClaudeArgs {
     /// Path to the claude-config repo clone (default: probed from common locations).
@@ -605,7 +605,7 @@ fn run_skill_sync(_claude_config: &Path, dry_run: bool) -> Result<()> {
 
 // --- Public entry point ---
 
-/// Entry point for `neon setup claude`.
+/// Entry point for `starbase setup claude`.
 ///
 /// Bootstraps the machine-level Claude/agent environment idempotently.
 /// In `--dry-run` mode, every step prints what would happen but makes no
@@ -620,7 +620,7 @@ pub fn run_claude(args: SetupClaudeArgs) -> Result<()> {
         Some(p) => {
             if !p.is_dir() {
                 let msg = format!(
-                    "claude-config path \"{}\" is not an existing directory.\n\n`claude-config` is a personal repo that holds your shared Claude skills,\nagents, and global CLAUDE.md.  Clone it first:\n\n    git clone https://github.com/<you>/claude-config ~/claude-config\n\nThen re-run:  neon setup claude --claude-config ~/claude-config",
+                    "claude-config path \"{}\" is not an existing directory.\n\n`claude-config` is a personal repo that holds your shared Claude skills,\nagents, and global CLAUDE.md.  Clone it first:\n\n    git clone https://github.com/<you>/claude-config ~/claude-config\n\nThen re-run:  starbase setup claude --claude-config ~/claude-config",
                     p.display()
                 );
                 if dry_run {
@@ -652,7 +652,7 @@ pub fn run_claude(args: SetupClaudeArgs) -> Result<()> {
                     "\n",
                     "\n    git clone https://github.com/<you>/claude-config ~/claude-config",
                     "\n",
-                    "\nThen re-run:  neon setup claude --claude-config ~/claude-config"
+                    "\nThen re-run:  starbase setup claude --claude-config ~/claude-config"
                 );
                 if dry_run {
                     println!("[dry-run] [!] claude-config: not found");
@@ -719,7 +719,7 @@ pub fn run_claude(args: SetupClaudeArgs) -> Result<()> {
 
 // --- Canonical shell values ---
 
-/// Preferred shell choices presented by `neon setup pick-shell`.
+/// Preferred shell choices presented by `starbase setup pick-shell`.
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ShellChoice {
     /// PowerShell 7 (pwsh) — Windows primary
@@ -766,7 +766,7 @@ impl ShellChoice {
 
 // --- Canonical terminal values ---
 
-/// Preferred terminal choices presented by `neon setup pick-terminal`.
+/// Preferred terminal choices presented by `starbase setup pick-terminal`.
 #[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TerminalChoice {
     /// Windows Terminal — Windows primary
@@ -810,7 +810,7 @@ impl TerminalChoice {
 
 // --- Args structs ---
 
-/// Arguments for `neon setup pick-shell`.
+/// Arguments for `starbase setup pick-shell`.
 #[derive(Args, Debug)]
 pub struct PickShellArgs {
     /// Shell to use (skips interactive prompt).
@@ -822,7 +822,7 @@ pub struct PickShellArgs {
     pub dry_run: bool,
 }
 
-/// Arguments for `neon setup pick-terminal`.
+/// Arguments for `starbase setup pick-terminal`.
 #[derive(Args, Debug)]
 pub struct PickTerminalArgs {
     /// Terminal to use (skips interactive prompt).
@@ -836,7 +836,7 @@ pub struct PickTerminalArgs {
 
 // --- Config schema ---
 
-/// Persisted `~/.config/neon/setup.toml` shape.
+/// Persisted `~/.config/starbase/setup.toml` shape.
 ///
 /// Both sections are optional so that partial files round-trip cleanly — a
 /// file written by `pick-shell` has no `[terminal]` table yet and that is fine.
@@ -923,7 +923,7 @@ struct ClaudeSection {
 
 // --- Config path ---
 
-/// Returns `~/.config/neon/setup.toml` using the literal home-dir path so that
+/// Returns `~/.config/starbase/setup.toml` using the literal home-dir path so that
 /// both Windows and Unix land in the same location the spec describes.
 ///
 /// `dirs::config_dir()` on Windows returns `%APPDATA%\Roaming`, which is not
@@ -931,7 +931,7 @@ struct ClaudeSection {
 fn config_path() -> Result<PathBuf> {
     let home =
         dirs::home_dir().ok_or_else(|| anyhow::anyhow!("cannot determine home directory"))?;
-    Ok(home.join(".config").join("neon").join("setup.toml"))
+    Ok(home.join(".config").join("starbase").join("setup.toml"))
 }
 
 // --- Config read / write (pure core used by both handlers) ---
@@ -1089,7 +1089,7 @@ pub fn run_pick_terminal(args: PickTerminalArgs) -> Result<()> {
 }
 
 // ============================================================
-// SECTION 4 — neon setup run + neon setup interactive
+// SECTION 4 — starbase setup run + starbase setup interactive
 // ============================================================
 
 // --- Tilde expansion ---
@@ -1150,7 +1150,7 @@ fn validate_steps_filter(filter: &[String]) -> Result<()> {
 
 // --- Args ---
 
-/// Arguments for `neon setup run`.
+/// Arguments for `starbase setup run`.
 #[derive(clap::Args, Debug)]
 pub struct SetupRunArgs {
     /// Only run specific steps (comma-separated).
@@ -1164,7 +1164,7 @@ pub struct SetupRunArgs {
     pub dry_run: bool,
 }
 
-/// Arguments for `neon setup interactive`.
+/// Arguments for `starbase setup interactive`.
 #[derive(clap::Args, Debug)]
 pub struct SetupInteractiveArgs {
     /// Print what would happen without making changes.
@@ -1174,9 +1174,9 @@ pub struct SetupInteractiveArgs {
 
 // --- run_setup_run ---
 
-/// Entry point for `neon setup run`.
+/// Entry point for `starbase setup run`.
 ///
-/// Loads `~/.config/neon/setup.toml` and replays each configured step in
+/// Loads `~/.config/starbase/setup.toml` and replays each configured step in
 /// pipeline order without interactive prompts.  Steps that have no config
 /// section yet are skipped with a note.
 pub fn run_setup_run(args: SetupRunArgs) -> Result<()> {
@@ -1187,7 +1187,10 @@ pub fn run_setup_run(args: SetupRunArgs) -> Result<()> {
     let filter = &args.steps;
     let dry_run = args.dry_run;
 
-    println!("neon setup run{}", if dry_run { " (dry-run)" } else { "" });
+    println!(
+        "starbase setup run{}",
+        if dry_run { " (dry-run)" } else { "" }
+    );
     println!();
 
     let mut any_failed = false;
@@ -1196,7 +1199,7 @@ pub fn run_setup_run(args: SetupRunArgs) -> Result<()> {
     if step_enabled(filter, "detect") {
         println!("--- detect ---");
         if dry_run {
-            println!("  [dry-run] would run: neon setup detect");
+            println!("  [dry-run] would run: starbase setup detect");
         } else if let Err(e) = run_detect() {
             eprintln!("  error: {e}");
             any_failed = true;
@@ -1332,7 +1335,7 @@ pub fn run_setup_run(args: SetupRunArgs) -> Result<()> {
     if step_enabled(filter, "install-apps") {
         println!("--- install-apps ---");
         if dry_run {
-            println!("  [dry-run] would run: neon setup install-apps --yes");
+            println!("  [dry-run] would run: starbase setup install-apps --yes");
         } else {
             let result = crate::install::run_install_apps(crate::install::InstallAppsArgs {
                 tools: None,
@@ -1394,7 +1397,7 @@ pub fn run_setup_run(args: SetupRunArgs) -> Result<()> {
     if step_enabled(filter, "diagnostics") {
         println!("--- diagnostics ---");
         if dry_run {
-            println!("  [dry-run] would run: neon setup diagnostics");
+            println!("  [dry-run] would run: starbase setup diagnostics");
         } else if let Err(e) = run_diagnostics(&DiagnosticsArgs {}) {
             eprintln!("  error: {e}");
             any_failed = true;
@@ -1412,7 +1415,7 @@ pub fn run_setup_run(args: SetupRunArgs) -> Result<()> {
 
 // --- run_setup_interactive ---
 
-/// Entry point for `neon setup interactive`.
+/// Entry point for `starbase setup interactive`.
 ///
 /// Presents an `inquire::MultiSelect` step picker, then calls each selected
 /// step's existing interactive runner in pipeline order.
@@ -1420,7 +1423,7 @@ pub fn run_setup_interactive(args: SetupInteractiveArgs) -> Result<()> {
     let dry_run = args.dry_run;
 
     println!(
-        "neon setup interactive{}",
+        "starbase setup interactive{}",
         if dry_run { " (dry-run)" } else { "" }
     );
     println!();
@@ -1473,7 +1476,7 @@ fn run_interactive_step(step: &str, dry_run: bool) -> Result<()> {
     match step {
         "detect" => {
             if dry_run {
-                println!("  [dry-run] would run: neon setup detect");
+                println!("  [dry-run] would run: starbase setup detect");
             } else {
                 run_detect()?;
             }
@@ -1532,7 +1535,7 @@ fn run_interactive_step(step: &str, dry_run: bool) -> Result<()> {
         }
         "diagnostics" => {
             if dry_run {
-                println!("  [dry-run] would run: neon setup diagnostics");
+                println!("  [dry-run] would run: starbase setup diagnostics");
             } else {
                 run_diagnostics(&DiagnosticsArgs {})?;
             }
@@ -1621,7 +1624,7 @@ mod tests {
     #[test]
     fn auto_detect_returns_none_for_empty_home() {
         // Use a path that definitely does not contain claude-config clones.
-        let fake_home = std::env::temp_dir().join("neon_test_empty_home_99999");
+        let fake_home = std::env::temp_dir().join("starbase_test_empty_home_99999");
         // No directories are created, so all candidates are absent.
         let result = find_claude_config(&fake_home);
         assert!(
@@ -1648,7 +1651,7 @@ mod tests {
     fn auto_detect_finds_dot_claude_config() {
         // Create a temporary directory structure that mimics the first candidate.
         let tmp = std::env::temp_dir().join(format!(
-            "neon_test_find_cc_{}",
+            "starbase_test_find_cc_{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.subsec_nanos())
@@ -1669,7 +1672,7 @@ mod tests {
     }
 
     /// On Windows, a directory junction must be recognized by `is_linked_to`
-    /// so that a second `neon setup claude` invocation is idempotent and does
+    /// so that a second `starbase setup claude` invocation is idempotent and does
     /// not attempt to recreate the junction.
     ///
     /// This is the canonical guard for the idempotency requirement: if
@@ -1681,7 +1684,7 @@ mod tests {
     #[test]
     fn is_linked_to_returns_true_for_existing_junction() {
         let tmp = std::env::temp_dir().join(format!(
-            "neon_test_junction_{}",
+            "starbase_test_junction_{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.subsec_nanos())
@@ -1871,7 +1874,7 @@ mod tests {
     #[test]
     fn save_config_is_atomic_on_overwrite() {
         let dir = std::env::temp_dir().join(format!(
-            "neon_test_atomic_{}",
+            "starbase_test_atomic_{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -1995,7 +1998,7 @@ mod tests {
                 skip: vec!["oh-my-zsh".to_string()],
             }),
             terminal_theme: Some(TerminalThemeSection {
-                path: "~/.config/neon/themes/synthwave84.yml".to_string(),
+                path: "~/.config/starbase/themes/synthwave84.yml".to_string(),
             }),
             claude: Some(ClaudeSection {
                 claude_config_path: Some("~/claude-config".to_string()),
@@ -2019,7 +2022,7 @@ mod tests {
         let pkgs = deserialized.packages.as_ref().unwrap();
         assert_eq!(pkgs.skip, vec!["oh-my-zsh"]);
         let tt = deserialized.terminal_theme.as_ref().unwrap();
-        assert_eq!(tt.path, "~/.config/neon/themes/synthwave84.yml");
+        assert_eq!(tt.path, "~/.config/starbase/themes/synthwave84.yml");
         let cl = deserialized.claude.as_ref().unwrap();
         assert_eq!(cl.claude_config_path.as_deref(), Some("~/claude-config"));
     }
@@ -2054,7 +2057,7 @@ mod tests {
 
     #[test]
     fn expand_tilde_path_passthrough_absolute() {
-        let abs = "/usr/local/bin/neon";
+        let abs = "/usr/local/bin/starbase";
         let result = expand_tilde_path(abs).expect("expand");
         assert_eq!(result.to_string_lossy(), abs);
     }

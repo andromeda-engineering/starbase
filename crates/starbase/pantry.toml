@@ -1,8 +1,8 @@
-# tui-pantry catalog configuration for neon-cli
+# tui-pantry catalog configuration for starbase-cli
 # https://github.com/taho-inc/tui-pantry
 
 # Ingredients are supplied directly by the widget_preview example entry point
-# via neon_cli::doctor::widgets::pantry::ingredients(), so no [ingredients]
+# via starbase_cli::doctor::widgets::pantry::ingredients(), so no [ingredients]
 # module-discovery section is needed here.
 
 [theme]

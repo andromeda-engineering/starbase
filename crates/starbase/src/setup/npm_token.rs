@@ -1,4 +1,4 @@
-/// `neon setup npm-token` — write an auth token to `~/.npmrc`.
+/// `starbase setup npm-token` — write an auth token to `~/.npmrc`.
 ///
 /// Writes `//registry.npmjs.org/:_authToken=<token>` (or the equivalent line
 /// for a custom registry).  Idempotent: replaces an existing matching line

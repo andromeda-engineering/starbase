@@ -1,9 +1,9 @@
-/// `neon setup secrets` — orchestrated credential setup (NPM token, SSH identities, Docker login).
+/// `starbase setup secrets` — orchestrated credential setup (NPM token, SSH identities, Docker login).
 ///
 /// Walks through up to three steps in sequence:
 /// 1. **npm** — prompt for NPM_TOKEN, write to `~/.npmrc` (idempotent).
 /// 2. **ssh** — prompt for SSH identity map entries, write to `~/.ssh/config` and
-///    `~/.config/neon/ssh-identities.toml` (idempotent, keyed by `Host` alias).
+///    `~/.config/starbase/ssh-identities.toml` (idempotent, keyed by `Host` alias).
 /// 3. **docker** — prompt for registry and invoke `docker login` (docker handles credentials).
 ///
 /// Use `--steps npm,ssh` to run only specific steps.  `--dry-run` prints what would happen
@@ -185,7 +185,7 @@ fn ssh_config_path() -> Option<PathBuf> {
 }
 
 fn ssh_identities_path() -> Option<PathBuf> {
-    home_relative(".config/neon/ssh-identities.toml")
+    home_relative(".config/starbase/ssh-identities.toml")
 }
 
 // --- Pure helpers (tested below) ---
@@ -430,7 +430,7 @@ fn run_ssh_step(dry_run: bool) -> Result<()> {
     for i in 1..=count {
         println!("\n  Identity {i}/{count}:");
         if let Some(identity) = run_one_ssh_identity(&id_file)? {
-            // Upsert into the neon identity store (keyed by alias)
+            // Upsert into the starbase identity store (keyed by alias)
             if let Some(existing) = id_file
                 .identity
                 .iter_mut()
@@ -500,7 +500,7 @@ pub fn run(args: &SecretsArgs) -> Result<()> {
     let steps = normalize_steps(&args.steps);
     warn_unknown_steps(&steps);
 
-    println!("=== neon setup secrets ===");
+    println!("=== starbase setup secrets ===");
     println!("Configuring machine credentials (NPM token, SSH identities, Docker login).");
     if args.dry_run {
         println!("[dry-run mode — no changes will be made]");
@@ -734,7 +734,7 @@ mod tests {
 
     #[test]
     fn resolve_existing_identity_falls_back_when_no_prior_entry() {
-        // ~/.ssh/config already had this Host (e.g. hand-edited before neon
+        // ~/.ssh/config already had this Host (e.g. hand-edited before starbase
         // existed) but the identity store has never recorded it — nothing to
         // preserve, so the freshly-entered identity is used as-is.
         let existing_identities = SshIdentityFile::default();

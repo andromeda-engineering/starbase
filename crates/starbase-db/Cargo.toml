@@ -1,10 +1,10 @@
 [package]
-name = "neon-db"
+name = "starbase-db"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "NeonOS persistence layer: SQLite v0 schema with SeaORM entities and SQLx migrations"
+description = "Starbase persistence layer: SQLite v0 schema with SeaORM entities and SQLx migrations"
 
 [dependencies]
 sea-orm = { version = "1.1", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
