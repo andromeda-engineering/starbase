@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-NeonOS is currently pre-MVP. Security reports are still welcome.
+Starbase is currently pre-MVP. Security reports are still welcome.
 
 ## Reporting a Vulnerability
 
@@ -12,7 +12,7 @@ Use GitHub private vulnerability reporting if available, or contact the maintain
 
 ## Security Principles
 
-NeonOS should:
+Starbase should:
 
 - avoid sending repo contents to external services by default
 - avoid storing secrets in memory

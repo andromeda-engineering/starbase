@@ -1,4 +1,4 @@
-//! `neon-db`: NeonOS persistence layer.
+//! `starbase-db`: Starbase persistence layer.
 //!
 //! Provides:
 //! - SeaORM entity definitions for the v0 schema (projects, memory_entries, config_entries)
@@ -15,7 +15,7 @@ use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
 /// Apply all pending migrations from the embedded `migrations/` directory.
 ///
-/// `db_url` should be a valid SQLx SQLite URL, e.g. `"sqlite:///path/to/neon.db"` or
+/// `db_url` should be a valid SQLx SQLite URL, e.g. `"sqlite:///path/to/starbase.db"` or
 /// `"sqlite::memory:"`.
 pub async fn run_migrations(db_url: &str) -> Result<()> {
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
@@ -50,7 +50,7 @@ mod tests {
     #[tokio::test]
     async fn migrations_apply_and_tables_exist() {
         let dir = TempDir::new().expect("tempdir");
-        let db_path = dir.path().join("neon.db");
+        let db_path = dir.path().join("starbase.db");
         let url = sqlite_url(&db_path);
 
         run_migrations(&url)
@@ -83,7 +83,7 @@ mod tests {
     #[tokio::test]
     async fn migrations_are_idempotent() {
         let dir = TempDir::new().expect("tempdir");
-        let db_path = dir.path().join("neon.db");
+        let db_path = dir.path().join("starbase.db");
         let url = sqlite_url(&db_path);
 
         run_migrations(&url).await.expect("first run");

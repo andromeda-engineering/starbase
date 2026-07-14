@@ -1,6 +1,6 @@
-# NeonOS
+# Starbase
 
-NeonOS is an open-source AI-native developer environment for repo setup, agent configuration, local memory, and repeatable coding workflows.
+Starbase is an open-source AI-native developer environment for repo setup, agent configuration, local memory, and repeatable coding workflows.
 
 ## Status
 
@@ -19,18 +19,18 @@ This repo currently contains only a minimal monorepo scaffold:
 ## Repository
 
 ```text
-github.com/neonwave-dev/neon-os
+github.com/andromeda-engineering/starbase
 ```
 
 ## Package Scope
 
 ```text
-@neonwave/neonos
+@andromeda-eng/starbase
 ```
 
 ## Goals
 
-NeonOS will eventually help developers:
+Starbase will eventually help developers:
 
 - initialize repos with consistent tooling
 - configure coding agents
@@ -41,7 +41,7 @@ NeonOS will eventually help developers:
 
 ## Non-Goals
 
-NeonOS is not:
+Starbase is not:
 
 - a literal operating system
 - a cloud IDE

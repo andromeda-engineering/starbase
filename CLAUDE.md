@@ -1,8 +1,8 @@
-# NeonOS — project instructions
+# Starbase — project instructions
 
-NeonOS is an opinionated, open-source, **Rust-first AI-native developer environment**
-exposed as the `neon` CLI: repo setup, local tooling, agent configuration, project
-memory, and repeatable development workflows. Repo: `neonwave-dev/neon-os`.
+Starbase is an opinionated, open-source, **Rust-first AI-native developer environment**
+exposed as the `starbase` CLI: repo setup, local tooling, agent configuration, project
+memory, and repeatable development workflows. Repo: `andromeda-engineering/starbase`.
 
 > These instructions are authoritative for work in this repo. The user's global
 > conventions (`~/.claude/CLAUDE.md`) still apply — especially the Windows/PowerShell
@@ -12,8 +12,8 @@ memory, and repeatable development workflows. Repo: `neonwave-dev/neon-os`.
 
 Hybrid monorepo (see `docs/adr/0001-use-hybrid-turborepo-cargo-workspace.md`):
 
-- **Rust** (Cargo workspace) — the `neon` CLI and core logic. Crates live in `crates/`.
-  The CLI binary crate is `crates/neon`. Toolchain pinned by `rust-toolchain.toml`.
+- **Rust** (Cargo workspace) — the `starbase` CLI and core logic. Crates live in `crates/`.
+  The CLI binary crate is `crates/starbase`. Toolchain pinned by `rust-toolchain.toml`.
 - **TypeScript/JS** (Turborepo + pnpm) — apps and packages. Apps in `apps/`
   (incl. the Astro Starlight docs site at `apps/docs`), shared packages in `packages/`.
 - Root config: `Cargo.toml`, `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`.
@@ -47,7 +47,8 @@ Phase docs in `docs/product/`, decisions in `docs/adr/`, architecture in
 
 ## Linear task lifecycle
 
-Project **NeonOS** (`38e4d31c-021e-4825-9d21-fd0bdc42aa35`), team **NeonWave** (key `NEO`).
+Project **Starbase** (`38e4d31c-021e-4825-9d21-fd0bdc42aa35`), team **NeonWave** (key `NEO`).
+<!-- TODO: → team Andromeda (key AND) after the Linear team move -->
 **Every unit of work has a ticket.** No implementation proceeds untracked.
 
 State machine (use these exact NEO states):

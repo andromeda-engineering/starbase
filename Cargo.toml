@@ -2,16 +2,16 @@
 resolver = "2"
 members = [
   "crates/stub-crate",
-  "crates/neon",
-  "crates/neon-db"
+  "crates/starbase",
+  "crates/starbase-db"
 ]
 
 [workspace.package]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/neonwave-dev/neon-os"
-homepage = "https://github.com/neonwave-dev/neon-os"
-documentation = "https://github.com/neonwave-dev/neon-os"
+repository = "https://github.com/andromeda-engineering/starbase"
+homepage = "https://github.com/andromeda-engineering/starbase"
+documentation = "https://github.com/andromeda-engineering/starbase"
 readme = "README.md"
 
 [workspace.dependencies]

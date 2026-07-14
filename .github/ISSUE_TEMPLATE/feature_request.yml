@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an improvement to NeonOS
+description: Suggest an improvement to Starbase
 title: "feat: "
 labels: ["enhancement"]
 body:
@@ -15,7 +15,7 @@ body:
     id: proposal
     attributes:
       label: Proposal
-      description: What should NeonOS do?
+      description: What should Starbase do?
     validations:
       required: true
 

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to NeonOS will be documented here.
+All notable changes to Starbase will be documented here.
 
 ## 0.0.0
 

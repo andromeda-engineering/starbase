@@ -18,5 +18,5 @@ reviews:
       instructions: >-
         Focus on correctness, safety, maintainability, and clear developer
         experience. Pay special attention to destructive file operations.
-        NeonOS should be local-first and should not send repo contents
+        Starbase should be local-first and should not send repo contents
         externally by default.

@@ -1,5 +1,5 @@
 ---
-title: NeonOS
+title: Starbase
 description: An open-source AI-native developer environment for repo setup, agent configuration, local memory, and repeatable coding workflows.
 template: splash
 hero:
@@ -14,9 +14,9 @@ hero:
       variant: minimal
 ---
 
-## What is NeonOS?
+## What is Starbase?
 
-NeonOS is an open-source AI-native developer environment designed for repo setup, agent configuration, local memory, and repeatable coding workflows.
+Starbase is an open-source AI-native developer environment designed for repo setup, agent configuration, local memory, and repeatable coding workflows.
 
 ## Key Features
 

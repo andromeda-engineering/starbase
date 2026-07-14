@@ -5,7 +5,7 @@ import starlight from '@astrojs/starlight';
 export default defineConfig({
   integrations: [
     starlight({
-      title: 'NeonOS',
+      title: 'Starbase',
       sidebar: [
         {
           label: 'Home',
@@ -22,7 +22,7 @@ export default defineConfig({
         {
           label: 'CLI Reference',
           items: [
-            { label: 'neon CLI', slug: 'cli' },
+            { label: 'starbase CLI', slug: 'cli' },
           ],
         },
         {

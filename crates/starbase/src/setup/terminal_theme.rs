@@ -1,4 +1,4 @@
-/// `neon setup customize-terminal` — Windows Terminal YAML theme adapter.
+/// `starbase setup customize-terminal` — Windows Terminal YAML theme adapter.
 ///
 /// Reads a YAML theme file (source of truth), transforms it into the Windows
 /// Terminal `settings.json` format, and upserts the color scheme + appearance.
@@ -78,7 +78,7 @@ pub struct Appearance {
 // Args
 // ============================================================
 
-/// Arguments for `neon setup customize-terminal`.
+/// Arguments for `starbase setup customize-terminal`.
 #[derive(Args, Debug)]
 pub struct CustomizeTerminalArgs {
     /// Path to the YAML theme file.
@@ -437,7 +437,7 @@ fn print_dry_run_summary(
 // Public entry point
 // ============================================================
 
-/// Entry point for `neon setup customize-terminal`.
+/// Entry point for `starbase setup customize-terminal`.
 pub fn run(args: &CustomizeTerminalArgs) -> Result<()> {
     if !cfg!(target_os = "windows") {
         bail!("customize-terminal is only supported on Windows");
@@ -894,7 +894,7 @@ palette:
     fn dry_run_writes_no_files() {
         // Create a temp dir with a fake settings.json and a theme file
         let dir = std::env::temp_dir().join(format!(
-            "neon_test_dryrun_{}",
+            "starbase_test_dryrun_{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.subsec_nanos())

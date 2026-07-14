@@ -30,7 +30,7 @@ Thumbs.db
 !.vscode/settings.json
 .idea/
 
-# NeonOS future local state
-.neon/neon.db
-.neon/logs/
-.neon/context/repomix-output.xml
+# Starbase future local state
+.starbase/starbase.db
+.starbase/logs/
+.starbase/context/repomix-output.xml

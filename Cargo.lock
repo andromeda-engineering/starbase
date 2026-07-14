@@ -1618,40 +1618,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "neon-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "crossterm",
- "dirs",
- "inquire",
- "json_comments",
- "ratatui",
- "serde",
- "serde_json",
- "serde_yaml_ng",
- "toml 1.1.2+spec-1.1.0",
- "tui-pantry",
-]
-
-[[package]]
-name = "neon-db"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "sea-orm",
- "serde",
- "sqlx 0.9.0",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "neonos-stub-crate"
-version = "0.0.0"
-
-[[package]]
 name = "nix"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3238,6 +3204,40 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
+
+[[package]]
+name = "starbase-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "crossterm",
+ "dirs",
+ "inquire",
+ "json_comments",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "toml 1.1.2+spec-1.1.0",
+ "tui-pantry",
+]
+
+[[package]]
+name = "starbase-db"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "sea-orm",
+ "serde",
+ "sqlx 0.9.0",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "starbase-stub-crate"
+version = "0.0.0"
 
 [[package]]
 name = "static_assertions"

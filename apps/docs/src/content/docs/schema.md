@@ -1,10 +1,10 @@
 ---
 title: Schema Reference
-description: SQLite v0 database schema and SeaORM entity definitions for NeonOS.
+description: SQLite v0 database schema and SeaORM entity definitions for Starbase.
 ---
 
-This page is the human-readable source of truth for the NeonOS v0 persistence schema.
-The canonical DDL lives in `crates/neon-db/migrations/0001_initial_schema.sql`; this doc
+This page is the human-readable source of truth for the Starbase v0 persistence schema.
+The canonical DDL lives in `crates/starbase-db/migrations/0001_initial_schema.sql`; this doc
 mirrors it and explains the design decisions.
 
 ## Design principles
@@ -26,7 +26,7 @@ mirrors it and explains the design decisions.
 
 ### `projects`
 
-Tracks every repository / project registered with the `neon` CLI.
+Tracks every repository / project registered with the `starbase` CLI.
 
 | Column | Type | Nullable | Notes |
 |--------|------|----------|-------|
@@ -94,7 +94,7 @@ is global (not scoped to any single project).
 
 ## SeaORM entities
 
-Each table has a corresponding SeaORM entity in `crates/neon-db/src/entities/`:
+Each table has a corresponding SeaORM entity in `crates/starbase-db/src/entities/`:
 
 | Table | Entity module |
 |-------|---------------|
@@ -107,11 +107,11 @@ nullable `project_id` in `config_entries`.
 
 ## Migrations
 
-Migrations are embedded in the `neon-db` crate via `sqlx::migrate!` and applied with
-`neon_db::run_migrations(db_url)`.  The single v0 migration file is:
+Migrations are embedded in the `starbase-db` crate via `sqlx::migrate!` and applied with
+`starbase_db::run_migrations(db_url)`.  The single v0 migration file is:
 
 ```text
-crates/neon-db/migrations/0001_initial_schema.sql
+crates/starbase-db/migrations/0001_initial_schema.sql
 ```
 
 Running migrations twice is safe -- all DDL uses `CREATE TABLE IF NOT EXISTS` and

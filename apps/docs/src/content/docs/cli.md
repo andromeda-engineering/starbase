@@ -1,9 +1,9 @@
 ---
-title: neon CLI Reference
-description: Command reference for the neon command-line interface.
+title: starbase CLI Reference
+description: Command reference for the starbase command-line interface.
 ---
 
-The `neon` CLI is the primary interface for interacting with NeonOS from your terminal.
+The `starbase` CLI is the primary interface for interacting with Starbase from your terminal.
 
 :::note
 The CLI is under active development. Commands documented here reflect the current Phase 1 interface.
@@ -14,24 +14,24 @@ The CLI is under active development. Commands documented here reflect the curren
 | Flag | Short | Description |
 |------|-------|-------------|
 | `--help` | `-h` | Print help for any command |
-| `--version` | `-V` | Print the current `neon` version |
+| `--version` | `-V` | Print the current `starbase` version |
 
 ---
 
-## `neon`
+## `starbase`
 
 Prints the top-level help and lists available subcommands.
 
 ```sh
-neon
+starbase
 ```
 
 **Output example:**
 
 ```text
-NeonOS CLI – developer environment diagnostics and tooling
+Starbase CLI – developer environment diagnostics and tooling
 
-Usage: neon <COMMAND>
+Usage: starbase <COMMAND>
 
 Commands:
   doctor  Gather and display environment diagnostics
@@ -44,13 +44,13 @@ Options:
 
 ---
 
-## `neon doctor`
+## `starbase doctor`
 
 A **read-only** health dashboard. It probes your local environment and reports detected
 tool versions, your Git identity, and repository health. It never mutates anything.
 
 ```sh
-neon doctor
+starbase doctor
 ```
 
 **What it reports:**
@@ -65,8 +65,8 @@ When stdout is **not** a TTY (piped or in CI), it prints the same information as
 useful for logging and scripts:
 
 ```sh
-neon doctor | cat        # bash / zsh
-neon doctor | Out-String # PowerShell
+starbase doctor | cat        # bash / zsh
+starbase doctor | Out-String # PowerShell
 ```
 
 **Plain-text output example:**
@@ -90,5 +90,5 @@ neon doctor | Out-String # PowerShell
   dirty:     0 file(s)
 ```
 
-`neon doctor` is diagnostic and read-only: it always exits `0`, reporting missing tools as
+`starbase doctor` is diagnostic and read-only: it always exits `0`, reporting missing tools as
 `not found` rather than failing. (It exits non-zero only on a genuine terminal I/O error.)

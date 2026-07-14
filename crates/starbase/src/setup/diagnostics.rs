@@ -1,4 +1,4 @@
-/// `neon setup diagnostics` — print a status report of the dev environment.
+/// `starbase setup diagnostics` — print a status report of the dev environment.
 ///
 /// Covers: git identity (local + global), docker login state, npm token (redacted),
 /// node/npm versions, shell info.  Read-only; no side effects.
@@ -126,7 +126,7 @@ pub fn run(_args: &DiagnosticsArgs) -> Result<()> {
     use std::fmt::Write;
     let mut out = String::new();
 
-    let _ = writeln!(out, "=== neon setup diagnostics ===");
+    let _ = writeln!(out, "=== starbase setup diagnostics ===");
     let _ = writeln!(out);
 
     // Git identity

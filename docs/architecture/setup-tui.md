@@ -1,4 +1,4 @@
-# Architecture: Cross-Platform Setup TUI (`neon setup`)
+# Architecture: Cross-Platform Setup TUI (`starbase setup`)
 
 > Design note. Implements ADR 0003. **Build active** — workspace provisioning is the
 > priority workstream, built in parallel with repo-init. Inputs:
@@ -7,14 +7,14 @@
 ## Shape
 
 ```sh
-neon setup            # launch the TUI: pick + customize each step, then run the pipeline
-neon setup <step>     # run one step headless (idempotent, scriptable)
-neon setup run        # run the full configured pipeline non-interactively (CI / re-provision)
+starbase setup            # launch the TUI: pick + customize each step, then run the pipeline
+starbase setup <step>     # run one step headless (idempotent, scriptable)
+starbase setup run        # run the full configured pipeline non-interactively (CI / re-provision)
 ```
 
 The **TUI is a thin driver**: it selects platform/options per step, writes a config file,
 and invokes the **micro-CLIs** in order. All real work lives in the per-step subcommands.
-Config persisted to e.g. `~/.config/neon/setup.toml` (the declarative desired state; re-runs
+Config persisted to e.g. `~/.config/starbase/setup.toml` (the declarative desired state; re-runs
 converge to it).
 
 ## Pipeline (the user-facing order)
@@ -30,7 +30,7 @@ converge to it).
 8. **Select custom functions / aliases** — the reusable helpers from the profile repos.
 9. **Set environment variables + secrets** — multi-step: NPM_TOKEN, `.ssh` for git,
    docker login, … (never hardcoded; written to standard per-tool locations).
-10. **Set up the shell profile** — wire `$PROFILE` / `.zshrc` to the NeonOS-managed profile.
+10. **Set up the shell profile** — wire `$PROFILE` / `.zshrc` to the Starbase-managed profile.
 11. **Initialize Claude / agent environment** — claude-config machine bootstrap: links
     (symlinks on Unix, junctions on Windows) for `~/.claude/skills` + `~/.claude/agents`,
     run sync-skills, provision global
@@ -86,7 +86,7 @@ appearance:
   cursorShape: bar
   opacity: 90
   useAcrylic: true
-  background: { image: "~/.config/neon/bg.png", opacity: 0.3, stretch: uniformToFill }
+  background: { image: "~/.config/starbase/bg.png", opacity: 0.3, stretch: uniformToFill }
 palette:                           # 16 ANSI + special colors → WT color scheme entries
   background: "#262335"
   foreground: "#ffffff"
@@ -106,6 +106,6 @@ Adapter responsibilities:
 
 ## Open questions
 
-- Where the canonical theme library lives (in-repo vs `~/.config/neon/themes/`).
+- Where the canonical theme library lives (in-repo vs `~/.config/starbase/themes/`).
 - macOS support timing (the cross-platform core already anticipates it; installers don't yet).
-- Whether `neon setup run` should be safe to wire into CI / fresh-machine bootstrap directly.
+- Whether `starbase setup run` should be safe to wire into CI / fresh-machine bootstrap directly.

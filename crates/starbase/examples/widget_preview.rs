@@ -1,6 +1,6 @@
 #[cfg(feature = "pantry")]
 fn main() -> std::io::Result<()> {
-    tui_pantry::run!(neon_cli::doctor::widgets::pantry::ingredients())
+    tui_pantry::run!(starbase_cli::doctor::widgets::pantry::ingredients())
 }
 
 #[cfg(not(feature = "pantry"))]

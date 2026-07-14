@@ -3,11 +3,11 @@
 # Linear lifecycle rules, states, and roles live in CLAUDE.md ("Linear task lifecycle").
 
 linear:
-  team: NEO                  # NeonWave
-  project: NeonOS            # id: 38e4d31c-021e-4825-9d21-fd0bdc42aa35
+  team: NEO                  # NeonWave — TODO: → AND after Linear team move
+  project: Starbase          # id: 38e4d31c-021e-4825-9d21-fd0bdc42aa35
 
 obsidian:
-  project: NeonOS            # folder under PLANNING_VAULT_ROOT
+  project: Starbase          # folder under PLANNING_VAULT_ROOT
 
 github:
-  repo: neonwave-dev/neon-os
+  repo: andromeda-engineering/starbase

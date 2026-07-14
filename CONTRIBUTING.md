@@ -1,10 +1,10 @@
-# Contributing to NeonOS
+# Contributing to Starbase
 
 Thanks for your interest in contributing.
 
 ## Project Status
 
-NeonOS is pre-MVP. APIs, commands, and internal structure may change frequently.
+Starbase is pre-MVP. APIs, commands, and internal structure may change frequently.
 
 ## Development Setup
 

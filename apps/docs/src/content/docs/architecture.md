@@ -1,9 +1,9 @@
 ---
 title: Architecture Overview
-description: How NeonOS structures its hybrid monorepo across TypeScript and Rust.
+description: How Starbase structures its hybrid monorepo across TypeScript and Rust.
 ---
 
-NeonOS uses a hybrid monorepo that combines two build systems working side by side.
+Starbase uses a hybrid monorepo that combines two build systems working side by side.
 
 ## Monorepo Structure
 
@@ -33,10 +33,10 @@ Cargo manages the Rust crates, CLI binaries, and core logic:
 
 ## Future Phases
 
-Phase 1 introduces the `neon` CLI binary (Rust, `crates/neon`) with its first
+Phase 1 introduces the `starbase` CLI binary (Rust, `crates/starbase`) with its first
 subcommand, `doctor`. Later phases build on it:
 
-- Additional `neon` subcommands beyond `doctor` (e.g. `repo`, `setup`)
+- Additional `starbase` subcommands beyond `doctor` (e.g. `repo`, `setup`)
 - SQLite persistence layer with SeaORM
 - Agent configuration and local memory subsystem
 - Repeatable workflow engine

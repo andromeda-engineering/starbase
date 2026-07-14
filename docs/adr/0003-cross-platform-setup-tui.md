@@ -18,16 +18,16 @@ Two existing repos provision a developer shell environment:
 
 Both are already **modular and micro-command-oriented**, and a clear subset is fully
 cross-platform (git identity management, docker login, npm/pnpm token, diagnostics) while
-the rest is platform-specific install logic. NeonOS wants this provisioning to be a
+the rest is platform-specific install logic. Starbase wants this provisioning to be a
 first-class, repeatable, customizable surface rather than two divergent shell scripts.
 
 ## Decision
 
-Model setup as **per-step micro-CLI commands** owned by NeonOS, plus a **thin orchestrating
+Model setup as **per-step micro-CLI commands** owned by Starbase, plus a **thin orchestrating
 TUI** that only *selects, configures, and runs the pipeline* — it holds no install logic
 itself.
 
-- Each pipeline step is an independently runnable `neon setup <step>` subcommand
+- Each pipeline step is an independently runnable `starbase setup <step>` subcommand
   (composable, scriptable, testable in isolation), mirroring how both repos already split
   work into discrete functions.
 - The TUI presents the steps, lets the user pick/customize each (which packages, which

@@ -1,4 +1,4 @@
-﻿/// `neon setup install-languages` — idempotently install language toolchains.
+﻿/// `starbase setup install-languages` — idempotently install language toolchains.
 ///
 /// Languages: node (installed via nvm when absent), python, rustup, go.
 /// Each is probed first; already-present tools print ✓ and are skipped.
@@ -28,7 +28,7 @@ fn current_platform() -> Platform {
 
 // --- Language enum ---
 
-/// A language toolchain that `neon setup install-languages` can install.
+/// A language toolchain that `starbase setup install-languages` can install.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Language {
     Node,
@@ -461,7 +461,7 @@ fn print_summary(results: &[(&Language, LangResult)]) {
 
 // --- CLI args ---
 
-/// Arguments for `neon setup install-languages`.
+/// Arguments for `starbase setup install-languages`.
 #[derive(clap::Args, Debug)]
 pub struct InstallLanguagesArgs {
     /// Print what would be done without doing it

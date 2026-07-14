@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in NeonOS
+description: Report a reproducible problem in Starbase
 title: "bug: "
 labels: ["bug"]
 body:

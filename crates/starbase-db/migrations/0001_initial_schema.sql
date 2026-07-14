@@ -1,7 +1,7 @@
--- NeonOS v0 schema: project memory / config primitives
+-- Starbase v0 schema: project memory / config primitives
 -- Designed to be Postgres-compatible (no SQLite-only types).
 --
--- projects     – registered projects tracked by neon
+-- projects     – registered projects tracked by starbase
 -- memory_entries – structured facts/notes attached to a project; feed agent context
 -- config_entries  – per-project (or global) key-value configuration
 

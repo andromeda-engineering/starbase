@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-NeonOS will likely need both Rust and TypeScript.
+Starbase will likely need both Rust and TypeScript.
 
 ## Decision
 

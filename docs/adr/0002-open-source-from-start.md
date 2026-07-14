@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-NeonOS is intended to be public and community-readable from the beginning.
+Starbase is intended to be public and community-readable from the beginning.
 
 ## Decision
 

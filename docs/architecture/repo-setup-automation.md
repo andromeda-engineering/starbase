@@ -1,8 +1,8 @@
-# Retrospective: Automating Open-Source Repo Setup (`neon repo`)
+# Retrospective: Automating Open-Source Repo Setup (`starbase repo`)
 
-> Status: Design note + retrospective. Written after bootstrapping `neonwave-dev/neon-os`
+> Status: Design note + retrospective. Written after bootstrapping `andromeda-engineering/starbase`
 > Phase 0 by hand (scaffold → push → harden). Captures what we did, what bit us, and how to
-> turn the whole thing into `neon repo init` + `neon repo harden` (or a standalone script).
+> turn the whole thing into `starbase repo init` + `starbase repo harden` (or a standalone script).
 
 ---
 
@@ -11,13 +11,13 @@
 Bringing up a production-ready OSS repo is a ~30–45 min checklist of file scaffolding plus a
 long tail of GitHub settings, security toggles, branch protection, labels, and bot wiring.
 Most of it is mechanical and **API-automatable**; a small residue genuinely requires a human
-(app installs, npm 2FA). This doc defines the split and the order so NeonOS can collapse the
+(app installs, npm 2FA). This doc defines the split and the order so Starbase can collapse the
 process to ~3–5 min + a couple of clicks.
 
 Two commands:
 
-- **`neon repo init`** — generate the scaffold (files, workspace, CI, docs, templates) and push.
-- **`neon repo harden`** — apply everything that lives in GitHub settings via the API, in the
+- **`starbase repo init`** — generate the scaffold (files, workspace, CI, docs, templates) and push.
+- **`starbase repo harden`** — apply everything that lives in GitHub settings via the API, in the
   correct order, and emit a checklist of the few remaining manual actions.
 
 ---
@@ -39,7 +39,7 @@ These are the failure modes a naive generator hits. Each is now a hard requireme
 `init`/`harden` implementation.
 
 ### 3.1 The scaffold spec was not CI-green as written
-A plausible-looking spec failed CI in five places. `neon repo init` must bake these in, not
+A plausible-looking spec failed CI in five places. `starbase repo init` must bake these in, not
 re-discover them:
 
 | Symptom | Root cause | Fix baked into the template |
@@ -118,10 +118,10 @@ of a `branch_name_pattern` ruleset; reserve the ruleset path for `Organization` 
 ## 4. The automation model
 
 ```
-neon repo init   ──▶  scaffold files + workspace + CI + docs        (template + verify)
+starbase repo init   ──▶  scaffold files + workspace + CI + docs        (template + verify)
                       git init → commit → create remote → push
                               │
-neon repo harden ──▶  GitHub settings via API, ORDERED:
+starbase repo harden ──▶  GitHub settings via API, ORDERED:
                       1. repo settings (topics, merge, projects, wiki)
                       2. security (alerts, security-updates, PVR)
                       3. labels + issue-template extras
@@ -194,12 +194,12 @@ Legend: **A** = fully automatable (API/commit) · **M** = manual (human only) ·
 | Merge profile | library (squash) / app (squash+rebase) | merge-strategy toggles + linear-history |
 | Languages | TS / Rust / both | which CI jobs, CodeQL languages, Dependabot ecosystems |
 
-The generator should take a small config object (a `neon.repo.toml` or prompts) and derive the
-rest. OSS + solo + both-languages + defer-publish was the profile used for neon-os.
+The generator should take a small config object (a `starbase.repo.toml` or prompts) and derive the
+rest. OSS + solo + both-languages + defer-publish was the profile used for starbase.
 
 ### 7.1 Repo type matrix
 
-`neon repo init` supports a three-axis repo-type matrix (NEO-48). These axes extend the
+`starbase repo init` supports a three-axis repo-type matrix (NEO-48). These axes extend the
 `RepoProfile` struct and drive template selection, scaffold content, LICENSE generation, and
 README badge output:
 
@@ -220,14 +220,14 @@ Implementation tracked in NEO-48 (matrix) and NEO-49 (interactive wizard).
 
 ### 7.2 Interactive configuration
 
-`neon repo init` with no flags (or with some flags missing) walks an interactive wizard:
+`starbase repo init` with no flags (or with some flags missing) walks an interactive wizard:
 
 - Built in Rust using `clap` + `interactive-clap` derive macro + `inquire` (see ADR 0004).
 - Dependent prompts: `license` is prompted only when `visibility = public` (private repos
   default to `none`/proprietary unless overridden).
 - `--yes` or a fully-flagged invocation bypasses all prompts — the CI / scripting contract.
-- The resolved `RepoProfile` is persisted (e.g. `neon.repo.toml`) so the same configuration
-  can be replayed by `neon repo harden` without re-prompting.
+- The resolved `RepoProfile` is persisted (e.g. `starbase.repo.toml`) so the same configuration
+  can be replayed by `starbase repo harden` without re-prompting.
 
 Interactive wizard implementation tracked in NEO-49.
 
@@ -260,19 +260,19 @@ harden <owner/repo> [--profile oss-solo] [--publish none|changesets|npm]
 
 Each step wrapped so a 4xx on an already-applied setting is a no-op, not a failure.
 
-### 8.2 NeonOS-native (`neon repo`, Rust)
+### 8.2 Starbase-native (`starbase repo`, Rust)
 When the CLI exists, fold the script into the Rust engine:
 - A **`RepoProfile`** struct (the §7 inputs) → drives a declarative plan.
 - A **GitHub client** (octocrab or raw REST) executing the §5 actions.
 - A **planner/executor** that prints the plan, applies idempotently, and reconciles on re-run
-  (`neon repo harden` = converge to desired state, like `terraform apply` for repo settings).
+  (`starbase repo harden` = converge to desired state, like `terraform apply` for repo settings).
 - A **manual-residue reporter**: the two or three things only a human can do, surfaced as a
   checklist with deep links.
-- Reuse the same template engine as `neon repo init`, with the §3.1 fixes as non-negotiable
+- Reuse the same template engine as `starbase repo init`, with the §3.1 fixes as non-negotiable
   defaults and a post-scaffold `verify` gate (clean clone + full `check`).
 
-This is a natural fit for NeonOS's stated goals (repo setup, repeatable workflows) and is the
-first concrete `neon repo` surface beyond `init`/`doctor`.
+This is a natural fit for Starbase's stated goals (repo setup, repeatable workflows) and is the
+first concrete `starbase repo` surface beyond `init`/`doctor`.
 
 ---
 

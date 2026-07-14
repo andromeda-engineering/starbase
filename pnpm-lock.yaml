@@ -47,7 +47,7 @@ importers:
 
   apps/stub-app:
     dependencies:
-      '@neonwave/neonos-stub-package':
+      '@andromeda-eng/starbase-stub-package':
         specifier: workspace:*
         version: link:../../packages/stub-package
 

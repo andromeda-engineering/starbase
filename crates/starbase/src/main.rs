@@ -1,19 +1,19 @@
 ﻿use anyhow::Result;
 use clap::{Parser, Subcommand};
 
-use neon_cli::doctor;
-use neon_cli::install::{self, InstallAppsArgs};
-use neon_cli::repo::{self, InitArgs};
-use neon_cli::setup::{
+use starbase_cli::doctor;
+use starbase_cli::install::{self, InstallAppsArgs};
+use starbase_cli::repo::{self, InitArgs};
+use starbase_cli::setup::{
     self, CustomizeTerminalArgs, DiagnosticsArgs, DockerLoginArgs, DockerLogoutArgs,
     DockerShowArgs, GitIdentityArgs, InstallLanguagesArgs, InstallPackagesArgs, NpmTokenArgs,
     PickShellArgs, PickTerminalArgs, SecretsArgs, SetupClaudeArgs, SetupInteractiveArgs,
     SetupRunArgs,
 };
 
-/// NeonOS CLI — developer environment diagnostics and tooling
+/// Starbase CLI — developer environment diagnostics and tooling
 #[derive(Parser)]
-#[command(name = "neon", version, about, long_about = None)]
+#[command(name = "starbase", version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -35,7 +35,7 @@ enum Commands {
     },
 }
 
-/// Subcommands for `neon repo`.
+/// Subcommands for `starbase repo`.
 ///
 /// Future: `Harden` — apply GitHub settings and branch protection via the API.
 #[derive(Subcommand)]
@@ -44,7 +44,7 @@ enum RepoCommands {
     Init(InitArgs),
 }
 
-/// Subcommands for `neon setup`.
+/// Subcommands for `starbase setup`.
 #[derive(Subcommand)]
 enum SetupCommands {
     /// Probe and report machine capabilities (OS, shells, tools)
