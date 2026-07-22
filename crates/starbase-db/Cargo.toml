@@ -7,7 +7,7 @@ repository.workspace = true
 description = "Starbase persistence layer: SQLite v0 schema with SeaORM entities and SQLx migrations"
 
 [dependencies]
-sea-orm = { version = "1.1", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
+sea-orm = { version = "2.0", features = ["sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 sqlx = { version = "0.9", features = ["sqlite", "runtime-tokio", "migrate"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 anyhow = "1.0"
